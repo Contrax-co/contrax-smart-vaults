@@ -34,32 +34,32 @@ contract SwapRouter is ISwapRouter {
     constructor(
         address _weth,
         address _uniswapV3Factory,
-        address _uniswapRouterV2,
-        address _uniswapRouterV3,
+        address _uniswapV2Router,
+        address _uniswapV3Router,
         address _sushiswapV3Factory,
-        address _sushiswapRouterV2,
-        address _sushiswapRouterV3,
-        address _camelotRouterV3
+        address _sushiswapV2Router,
+        address _sushiswapV3Router,
+        address _camelotV3Router
     ) {
         require(
-            _uniswapRouterV2 != address(0) &&
+            _weth != address(0) &&
+                _uniswapV2Router != address(0) &&
                 _uniswapV3Factory != address(0) &&
-                _uniswapRouterV3 != address(0) &&
-                _sushiswapRouterV2 != address(0) &&
+                _uniswapV3Router != address(0) &&
+                _sushiswapV2Router != address(0) &&
                 _sushiswapV3Factory != address(0) &&
-                _sushiswapRouterV3 != address(0) &&
-                _camelotRouterV3 != address(0) &&
-                _weth != address(0),
+                _sushiswapV3Router != address(0) &&
+                _camelotV3Router != address(0),
             "One or more addresses are invalid"
         );
 
-        uniswapV2Router = _uniswapRouterV2;
+        uniswapV2Router = _uniswapV2Router;
         uniswapV3Factory = _uniswapV3Factory;
-        uniswapV3Router = _uniswapRouterV3;
-        sushiswapV2Router = _sushiswapRouterV2;
+        uniswapV3Router = _uniswapV3Router;
+        sushiswapV2Router = _sushiswapV2Router;
         sushiswapV3Factory = _sushiswapV3Factory;
-        sushiswapV3Router = _sushiswapRouterV3;
-        camelotV3Router = _camelotRouterV3;
+        sushiswapV3Router = _sushiswapV3Router;
+        camelotV3Router = _camelotV3Router;
         wrappedNative = _weth;
     }
 

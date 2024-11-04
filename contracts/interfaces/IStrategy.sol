@@ -6,6 +6,12 @@ interface IStrategy {
 
     function timelock() external view returns (address);
 
+    function governance() external view returns (address);
+
+    function strategist() external view returns (address);
+
+    function controller() external view returns (address);
+
     function deposit() external;
 
     function withdrawForSwap(uint256) external returns (uint256);

@@ -65,7 +65,7 @@ contract Controller is IController {
             msg.sender == strategist || msg.sender == governance,
             "!strategist"
         );
-        require(vaults[_token] == address(0), "vault");
+        require(vaults[_token] == address(0), "vault already set");
         vaults[_token] = _vault;
     }
 
