@@ -3,33 +3,42 @@ pragma solidity ^0.8.20;
 
 import {Vault} from "../vaults/Vault.sol";
 import {Controller} from "../controllers/Controller.sol";
+import {IVault} from "../interfaces/IVault.sol";
 import {IStrategy} from "../interfaces/IStrategy.sol";
+import {IController} from "../interfaces/IController.sol";
+import {IVaultFactory} from "../interfaces/IVaultFactory.sol";
 
-abstract contract VaultFactoryBase {
+abstract contract VaultFactoryBase is IVaultFactory {
     mapping(address token => address vault) public vaults;
     mapping(address vault => address controller) public controllers;
     mapping(address vault => address strategy) public strategies;
 
     address public governance;
 
+    constructor(address _governance) {
+        governance = _governance;
+    }
+
     modifier onlyGovernance() {
         require(msg.sender == governance, "Caller is not the governance");
         _;
     }
 
+    function setGovernance(address _governance) external onlyGovernance {
+        governance = _governance;
+    }
+
     function _createVault(
         address _token,
         IStrategy _strategy,
-        Controller _controller,
+        IController _controller,
         address _governance,
         address _timelock
-    ) internal {
-        Vault vault = new Vault(
-            _token,
-            _governance,
-            _timelock,
-            address(_controller)
-        );
+    )
+        internal
+        returns (IVault vault, IController controller, IStrategy strategy)
+    {
+        vault = new Vault(_token, _governance, _timelock, address(_controller));
         vaults[_token] = address(vault);
         controllers[address(vault)] = address(_controller);
         strategies[address(vault)] = address(_strategy);
@@ -39,8 +48,10 @@ abstract contract VaultFactoryBase {
         _controller.approveStrategy(_token, address(_strategy));
         _controller.setStrategy(_token, address(_strategy));
 
-        _controller.setGovernance(msg.sender);
-        _controller.setTimelock(msg.sender);
+        _controller.setGovernance(_governance);
+        _controller.setTimelock(_timelock);
+
+        return (vault, controller, strategy);
     }
 
     function _createStrategy(
@@ -58,22 +69,27 @@ abstract contract VaultFactoryBase {
         address _timelock,
         address _devfund,
         address _treasury
-    ) external onlyGovernance {
-        Controller controller = new Controller(
+    )
+        external
+        onlyGovernance
+        returns (IVault vault, IController controller, IStrategy strategy)
+    {
+        controller = new Controller(
             address(this), // use factory as governance so we can set it later
             _strategist,
             address(this),
             _devfund,
             _treasury
         );
-        IStrategy strategy = _createStrategy(
+        strategy = _createStrategy(
             _token,
             address(controller),
             _governance,
             _strategist,
             _timelock
         );
-        _createVault(_token, strategy, controller, _governance, _timelock);
+        return
+            _createVault(_token, strategy, controller, _governance, _timelock);
     }
 
     function createVault(
@@ -85,8 +101,12 @@ abstract contract VaultFactoryBase {
         address _treasury,
         bytes memory strategyContractCode,
         bytes memory strategyExtraParams
-    ) external onlyGovernance {
-        Controller controller = new Controller(
+    )
+        external
+        onlyGovernance
+        returns (IVault vault, IController controller, IStrategy strategy)
+    {
+        controller = new Controller(
             address(this), // use factory as governance so we can set it later
             _strategist,
             address(this),
@@ -113,8 +133,20 @@ abstract contract VaultFactoryBase {
                 revert(0, 0)
             }
         }
-        IStrategy strategy = IStrategy(strategyAddress);
+        strategy = IStrategy(strategyAddress);
         require(strategy.want() == _token, "Invalid strategy bytecode");
-        _createVault(_token, strategy, controller, _governance, _timelock);
+        return
+            _createVault(_token, strategy, controller, _governance, _timelock);
+    }
+
+    function setVaultData(
+        address _token,
+        address _vault,
+        address _controller,
+        address _strategy
+    ) external onlyGovernance {
+        vaults[_token] = _vault;
+        controllers[_vault] = _controller;
+        strategies[_vault] = _strategy;
     }
 }

@@ -6,6 +6,8 @@ import {GammaStrategy} from "../strategies/GammaStrategy.sol";
 import {IStrategy} from "../interfaces/IStrategy.sol";
 
 contract GammaVaultFactory is VaultFactoryBase {
+    constructor(address _governance) VaultFactoryBase(_governance) {}
+
     function _createStrategy(
         address _token,
         address _controller,
