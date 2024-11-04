@@ -31,7 +31,8 @@ contract GammaStrategy is StrategyBase {
     }
 
     function balanceOfPool() public view virtual override returns (uint256) {
-        return IERC20(want).balanceOf(address(this));
+        // no need to track any balance in the pool
+        return 0;
     }
 
     function _withdrawSome(
