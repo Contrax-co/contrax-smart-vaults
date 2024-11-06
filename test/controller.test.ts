@@ -20,24 +20,33 @@ export const doControllerTests = async (
         strategy,
       } = await loadFixture(() => deploy(false));
 
-      await controller.write.setVault([vaultAsset, vault.address], {
+      await controller.write.setVault([vaultAsset.address, vault.address], {
         account: governance.account,
       });
-      await controller.write.approveStrategy([vaultAsset, strategy.address], {
-        account: timelock.account,
-      });
-      await controller.write.setStrategy([vaultAsset, strategy.address], {
-        account: governance.account,
-      });
+      await controller.write.approveStrategy(
+        [vaultAsset.address, strategy.address],
+        {
+          account: timelock.account,
+        }
+      );
+      await controller.write.setStrategy(
+        [vaultAsset.address, strategy.address],
+        {
+          account: governance.account,
+        }
+      );
 
-      expect(await controller.read.vaults([vaultAsset])).to.equal(
+      expect(await controller.read.vaults([vaultAsset.address])).to.equal(
         getAddress(vault.address)
       );
-      expect(await controller.read.strategies([vaultAsset])).to.equal(
+      expect(await controller.read.strategies([vaultAsset.address])).to.equal(
         getAddress(strategy.address)
       );
       expect(
-        await controller.read.approvedStrategies([vaultAsset, strategy.address])
+        await controller.read.approvedStrategies([
+          vaultAsset.address,
+          strategy.address,
+        ])
       ).to.be.true;
 
       expect(await controller.read.governance()).to.equal(
@@ -140,29 +149,38 @@ export const doControllerTests = async (
     });
 
     it("should handle strategy approval and revocation correctly", async function () {
-      const {
-        governance,
-        timelock,
-        vaultAsset: token,
-        user,
-        controller,
-      } = await loadFixture(deploy);
+      const { governance, timelock, vaultAsset, user, controller } =
+        await loadFixture(deploy);
 
       const mockStrategy = user.account.address; // Using user address as mock strategy
 
       // Approve strategy
-      await controller.write.approveStrategy([token, mockStrategy], {
-        account: timelock.account,
-      });
-      expect(await controller.read.approvedStrategies([token, mockStrategy])).to
-        .be.true;
+      await controller.write.approveStrategy(
+        [vaultAsset.address, mockStrategy],
+        {
+          account: timelock.account,
+        }
+      );
+      expect(
+        await controller.read.approvedStrategies([
+          vaultAsset.address,
+          mockStrategy,
+        ])
+      ).to.be.true;
 
       // Revoke strategy
-      await controller.write.revokeStrategy([token, mockStrategy], {
-        account: governance.account,
-      });
-      expect(await controller.read.approvedStrategies([token, mockStrategy])).to
-        .be.false;
+      await controller.write.revokeStrategy(
+        [vaultAsset.address, mockStrategy],
+        {
+          account: governance.account,
+        }
+      );
+      expect(
+        await controller.read.approvedStrategies([
+          vaultAsset.address,
+          mockStrategy,
+        ])
+      ).to.be.false;
     });
 
     it("should allow strategist or governance to set vault", async function () {
@@ -173,7 +191,7 @@ export const doControllerTests = async (
 
       // Should fail when trying to set vault again
       await expect(
-        controller.write.setVault([vaultAsset, mockVault], {
+        controller.write.setVault([vaultAsset.address, mockVault], {
           account: governance.account,
         })
       ).to.be.rejectedWith("vault already set");

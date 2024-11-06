@@ -1,5 +1,5 @@
 import hre from "hardhat";
-import { Address, getAddress } from "viem";
+import { Address, getAddress, parseEther } from "viem";
 import { bytecode as GammaStrategyBytecode } from "../artifacts/contracts/strategies/GammaStrategy.sol/GammaStrategy.json";
 import {
   DeployVaultFactoryFixture,
@@ -9,6 +9,7 @@ import { ContractTypesMap } from "hardhat/types";
 import { doControllerTests } from "./controller.test";
 import { WalletClient } from "@nomicfoundation/hardhat-viem/types";
 import { doStrategyTests } from "./strategy.test";
+import { doVaultTests } from "./vault.test";
 
 export type DeployVaultWithoutFactoryFixture = (doSetup?: boolean) => Promise<{
   stakable: boolean;
@@ -18,7 +19,7 @@ export type DeployVaultWithoutFactoryFixture = (doSetup?: boolean) => Promise<{
   devfund: WalletClient;
   treasury: WalletClient;
   user: WalletClient;
-  vaultAsset: Address;
+  vaultAsset: ContractTypesMap["MockERC20"];
   vault: ContractTypesMap["Vault"];
   strategy: ContractTypesMap["StrategyBase"];
   controller: ContractTypesMap["Controller"];
@@ -44,19 +45,22 @@ describe("Gamma Vault Test", function () {
       user,
       vaultAsset,
       VaultFactory,
+      strategyBytecode: GammaStrategyBytecode as Address,
+      strategyExtraParams: "0x",
     };
   };
 
   const deployVaultWithoutFactory: DeployVaultWithoutFactoryFixture = async (
     doSetup: boolean = true
   ) => {
-    const MockToken = await hre.viem.deployContract("MockERC20", [
+    const [governance, strategist, timelock, devfund, treasury, user] =
+      await hre.viem.getWalletClients();
+
+    // Deploy Mock vault asset
+    const vaultAsset = await hre.viem.deployContract("MockERC20", [
       "Mock Token",
       "MTK",
     ]);
-    const vaultAsset = getAddress(MockToken.address);
-    const [governance, strategist, timelock, devfund, treasury, user] =
-      await hre.viem.getWalletClients();
 
     // Deploy Controller first
     const controller = await hre.viem.deployContract("Controller", [
@@ -69,7 +73,7 @@ describe("Gamma Vault Test", function () {
 
     // Deploy Strategy
     const strategy = (await hre.viem.deployContract("GammaStrategy", [
-      vaultAsset,
+      vaultAsset.address,
       governance.account.address,
       strategist.account.address,
       controller.address,
@@ -78,23 +82,32 @@ describe("Gamma Vault Test", function () {
 
     // Deploy Vault
     const vault = await hre.viem.deployContract("Vault", [
-      vaultAsset,
+      vaultAsset.address,
       governance.account.address,
       timelock.account.address,
       controller.address,
     ]);
 
+    // Mint some tokens to the user
+    await vaultAsset.write.mint([user.account.address, parseEther("1000000")]);
+
     if (doSetup) {
       // Set up controller relationships
-      await controller.write.setVault([vaultAsset, vault.address], {
+      await controller.write.setVault([vaultAsset.address, vault.address], {
         account: governance.account,
       });
-      await controller.write.approveStrategy([vaultAsset, strategy.address], {
-        account: timelock.account,
-      });
-      await controller.write.setStrategy([vaultAsset, strategy.address], {
-        account: governance.account,
-      });
+      await controller.write.approveStrategy(
+        [vaultAsset.address, strategy.address],
+        {
+          account: timelock.account,
+        }
+      );
+      await controller.write.setStrategy(
+        [vaultAsset.address, strategy.address],
+        {
+          account: governance.account,
+        }
+      );
     }
     return {
       stakable: false,
@@ -112,11 +125,13 @@ describe("Gamma Vault Test", function () {
   };
 
   // need forking to test gamma strategies
-  doVaultFactoryTests(deployVaultFactory, GammaStrategyBytecode as Address);
+  doVaultFactoryTests(deployVaultFactory);
 
   doControllerTests(deployVaultWithoutFactory);
 
   doStrategyTests(deployVaultWithoutFactory);
+
+  doVaultTests(deployVaultWithoutFactory);
 
   // TODO: add tests for vault, test both stakable and non-stakable strategies
 });

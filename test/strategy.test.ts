@@ -21,7 +21,9 @@ export const doStrategyTests = async (
           strategy,
         } = await loadFixture(deploy);
 
-        expect(await strategy.read.want()).to.equal(vaultAsset);
+        expect(await strategy.read.want()).to.equal(
+          getAddress(vaultAsset.address)
+        );
         expect(await strategy.read.governance()).to.equal(
           getAddress(governance.account.address)
         );
@@ -52,7 +54,7 @@ export const doStrategyTests = async (
 
         await expect(
           hre.viem.deployContract("GammaStrategy", [
-            vaultAsset,
+            vaultAsset.address,
             governance.account.address,
             strategist.account.address,
             controller.address,
@@ -178,10 +180,9 @@ export const doStrategyTests = async (
       it("should correctly report balances", async function () {
         const { vaultAsset, strategy, stakable } = await loadFixture(deploy);
 
-        const MockToken = await hre.viem.getContractAt("MockERC20", vaultAsset);
         const amount = 1000000n;
 
-        await MockToken.write.mint([strategy.address, amount]);
+        await vaultAsset.write.mint([strategy.address, amount]);
 
         expect(await strategy.read.balanceOfWant()).to.equal(
           amount,

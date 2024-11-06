@@ -12,7 +12,7 @@ abstract contract StrategyBase is IStrategy {
     using Address for address;
 
     // Tokens
-    address public want;
+    IERC20 public want;
     uint24 public constant poolFee = 3000;
 
     // Perfomance fees - start with 10%
@@ -52,7 +52,7 @@ abstract contract StrategyBase is IStrategy {
             "One or more addresses are invalid"
         );
 
-        want = _want;
+        want = IERC20(_want);
         governance = _governance;
         strategist = _strategist;
         controller = _controller;
@@ -169,7 +169,7 @@ abstract contract StrategyBase is IStrategy {
     function withdraw(
         address _asset
     ) external onlyController returns (uint256 balance) {
-        require(want != address(_asset), "want");
+        require(address(want) != address(_asset), "want");
         balance = IERC20(_asset).balanceOf(address(this));
         IERC20(_asset).safeTransfer(controller, balance);
     }
