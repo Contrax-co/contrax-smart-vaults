@@ -1,26 +1,17 @@
 import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { getAddress, parseEther } from "viem";
-import { DeployVaultWithoutFactoryFixture } from "./gamma.test";
+import { DeployFixture } from "./protocol.test";
 
-export const doVaultTests = async (
-  deploy: DeployVaultWithoutFactoryFixture
-) => {
+export const doVaultTests = (deploy: DeployFixture) => {
   describe("Vault Test", function () {
     it("should initialize with correct parameters", async function () {
-      const { governance, timelock, controller, vaultAsset, vault } =
-        await loadFixture(deploy);
+      const { governance, timelock, controller, vaultAsset, vault } = await loadFixture(deploy);
 
       expect(await vault.read.token()).to.equal(getAddress(vaultAsset.address));
-      expect(await vault.read.governance()).to.equal(
-        getAddress(governance.account.address)
-      );
-      expect(await vault.read.timelock()).to.equal(
-        getAddress(timelock.account.address)
-      );
-      expect(await vault.read.controller()).to.equal(
-        getAddress(controller.address)
-      );
+      expect(await vault.read.governance()).to.equal(getAddress(governance.account.address));
+      expect(await vault.read.timelock()).to.equal(getAddress(timelock.account.address));
+      expect(await vault.read.controller()).to.equal(getAddress(controller.address));
       expect(await vault.read.min()).to.equal(9500n);
       expect(await vault.read.max()).to.equal(10000n);
     });
@@ -38,18 +29,12 @@ export const doVaultTests = async (
       await vault.write.deposit([depositAmount], { account: user.account });
 
       // Check balances and shares
-      expect(await vault.read.balanceOf([user.account.address])).to.equal(
-        depositAmount
-      );
+      expect(await vault.read.balanceOf([user.account.address])).to.equal(depositAmount);
       expect(await vault.read.totalSupply()).to.equal(depositAmount);
     });
 
     it("should allow withdrawals and burns correct shares", async function () {
-      const {
-        user,
-        vault: Vault,
-        vaultAsset: vaultAsset,
-      } = await loadFixture(deploy);
+      const { user, vault: Vault, vaultAsset: vaultAsset } = await loadFixture(deploy);
       const depositAmount = parseEther("100");
 
       // Setup: Deposit first
@@ -71,9 +56,7 @@ export const doVaultTests = async (
       const newMin = 9600n;
 
       // Should fail when non-governance tries to set min
-      await expect(
-        Vault.write.setMin([newMin], { account: user.account })
-      ).to.be.rejectedWith("!governance");
+      await expect(Vault.write.setMin([newMin], { account: user.account })).to.be.rejectedWith("!governance");
 
       // Should succeed when governance sets min
       await Vault.write.setMin([newMin], { account: governance.account });
@@ -85,9 +68,9 @@ export const doVaultTests = async (
       const newGovernance = user.account.address;
 
       // Should fail when non-governance tries to set governance
-      await expect(
-        Vault.write.setGovernance([newGovernance], { account: user.account })
-      ).to.be.rejectedWith("!governance");
+      await expect(Vault.write.setGovernance([newGovernance], { account: user.account })).to.be.rejectedWith(
+        "!governance"
+      );
 
       // Should succeed when governance sets new governance
       await Vault.write.setGovernance([newGovernance], {
@@ -101,9 +84,7 @@ export const doVaultTests = async (
       const newTimelock = user.account.address;
 
       // Should fail when non-timelock tries to set timelock
-      await expect(
-        Vault.write.setTimelock([newTimelock], { account: user.account })
-      ).to.be.rejectedWith("!timelock");
+      await expect(Vault.write.setTimelock([newTimelock], { account: user.account })).to.be.rejectedWith("!timelock");
 
       // Should succeed when timelock sets new timelock
       await Vault.write.setTimelock([newTimelock], {
@@ -113,11 +94,7 @@ export const doVaultTests = async (
     });
 
     it("should calculate correct share price ratio", async function () {
-      const {
-        user,
-        vault: Vault,
-        vaultAsset: vaultAsset,
-      } = await loadFixture(deploy);
+      const { user, vault: Vault, vaultAsset: vaultAsset } = await loadFixture(deploy);
       const depositAmount = parseEther("100");
 
       // Initial deposit

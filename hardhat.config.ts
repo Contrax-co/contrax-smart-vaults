@@ -1,5 +1,6 @@
 import type { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
+import "hardhat-chai-matchers-viem";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -7,10 +8,16 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 2000,
+        runs: 200,
       },
+    },
+  },
+  networks: {
+    hardhat: {
+      chainId: 1337,
     },
   },
 };
 
 export default config;
+
