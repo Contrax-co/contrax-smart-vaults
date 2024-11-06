@@ -20,17 +20,6 @@ interface IVaultFactory {
         address _strategist,
         address _timelock,
         address _devfund,
-        address _treasury
-    )
-        external
-        returns (IVault vault, IController controller, IStrategy strategy);
-
-    function createVault(
-        address _token,
-        address _governance,
-        address _strategist,
-        address _timelock,
-        address _devfund,
         address _treasury,
         bytes memory strategyContractCode,
         bytes memory strategyExtraParams
