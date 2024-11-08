@@ -6,7 +6,7 @@ interface IMockStaking {
 
   function earned(address account) external view returns (uint256);
 
-  function getReward() external;
+  function getReward() external returns (uint256 reward);
 
   function deposit(uint256 assets, address receiver) external returns (uint256 shares);
 

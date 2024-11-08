@@ -7,6 +7,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IMockStaking} from "./IMockStaking.sol";
 
+interface IRewardToken is IERC20 {
+  function mint(address to, uint256 amount) external;
+}
+
 contract MockStaking is IMockStaking, ERC4626, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
@@ -95,13 +99,14 @@ contract MockStaking is IMockStaking, ERC4626, ReentrancyGuard {
   }
 
   // Updated getReward function to actually transfer rewards
-  function getReward() external nonReentrant {
+  function getReward() external nonReentrant returns (uint256 reward) {
     _updateReward(msg.sender);
-    uint256 reward = rewards[msg.sender];
+    reward = rewards[msg.sender];
     if (reward > 0) {
       rewards[msg.sender] = 0;
-      IERC20(rewardToken).safeTransfer(msg.sender, reward);
+      IRewardToken(rewardToken).mint(msg.sender, reward);
     }
+    return reward;
   }
 
   // View function to check reward token balance

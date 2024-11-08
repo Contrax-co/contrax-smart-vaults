@@ -31,7 +31,7 @@ interface IZapper {
     uint256 tokenAmountOutMin,
     IERC20 tokenIn,
     uint256 tokenInAmount
-  ) external returns (uint256 shares, ReturnedAsset[] memory returnedAssets);
+  ) external payable returns (uint256 shares, ReturnedAsset[] memory returnedAssets);
 
   function zapOutAndSwap(
     IVault vault,

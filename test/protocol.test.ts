@@ -1,4 +1,3 @@
-import hre from "hardhat";
 import { Address } from "viem";
 import { doVaultFactoryTests } from "./vaultFactory.test";
 import { ContractTypesMap } from "hardhat/types";
@@ -6,7 +5,7 @@ import { doControllerTests } from "./controller.test";
 import { WalletClient } from "@nomicfoundation/hardhat-viem/types";
 import { doStrategyTests } from "./strategy.test";
 import { doVaultTests } from "./vault.test";
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { doZapperTests } from "./zapper.test";
 
 export type DeployFixture = (doSetup?: boolean) => Promise<{
   stakable: boolean;
@@ -16,13 +15,18 @@ export type DeployFixture = (doSetup?: boolean) => Promise<{
   devfund: WalletClient;
   treasury: WalletClient;
   user: WalletClient;
-  VaultFactory: ContractTypesMap["VaultFactoryBase"];
+  vaultFactory: ContractTypesMap["VaultFactoryBase"];
   vaultAsset: ContractTypesMap["ERC20"];
+  usdc: ContractTypesMap["ERC20"];
+  wrappedNative: ContractTypesMap["MockWETH"];
+  zapper: ContractTypesMap["ZapperBase"];
+  swapRouter: ContractTypesMap["ISwapRouter"];
   vault: ContractTypesMap["Vault"];
   strategy: ContractTypesMap["StrategyBase"];
   controller: ContractTypesMap["Controller"];
   strategyBytecode: Address;
   strategyExtraParams: Address;
+  maxSlippage: bigint;
 }>;
 
 export const doProtocolTest = async (params: {
@@ -33,8 +37,11 @@ export const doProtocolTest = async (params: {
   for (let i = 0; i < params.vaultAssets.length; i++) {
     const deployFixure = params.getDeployFixture(params.vaultAssets[i]);
     // const { vaultAsset } = await loadFixture(deployFixure);
-    // const vaultSssetContract = await hre.viem.getContractAt("IERC20Metadata", vaultAsset.address);
-    const vaultAssetName = "hi"; // await vaultSssetContract.read.name();
+    // const vaultAssetContract = await hre.viem.getContractAt("IERC20Metadata", vaultAsset.address);
+    // const vaultAssetName = await vaultAssetContract.read.name();
+
+    // TODO: get vaultAssetName from contract
+    const vaultAssetName = "some token";
 
     describe(`${params.protocolName} ${vaultAssetName} Vault Test`, function () {
       doVaultFactoryTests(deployFixure);
@@ -45,7 +52,7 @@ export const doProtocolTest = async (params: {
 
       doVaultTests(deployFixure);
 
-      // TODO: add tests for vault, test both stakable and non-stakable strategies
+      doZapperTests(deployFixure);
     });
   }
 };

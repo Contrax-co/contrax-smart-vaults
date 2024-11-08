@@ -13,7 +13,6 @@ abstract contract StrategyBase is IStrategy {
 
   // Tokens
   IERC20 public want;
-  uint24 public constant poolFee = 3000;
 
   // Perfomance fees - start with 10%
   uint256 public performanceTreasuryFee = 1000;
@@ -160,7 +159,7 @@ abstract contract StrategyBase is IStrategy {
     IERC20(want).safeTransfer(IController(controller).treasury(), _feeTreasury);
 
     address _vault = IController(controller).vaults(address(want));
-    require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
+    require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds, but is it even possible?
 
     IERC20(want).safeTransfer(_vault, _amount - _feeDev - _feeTreasury);
   }
@@ -211,23 +210,6 @@ abstract contract StrategyBase is IStrategy {
         // throw if delegatecall failed
         revert(add(response, 0x20), size)
       }
-    }
-  }
-
-  function _distributePerformanceFeesAndDeposit() internal {
-    uint256 _want = IERC20(want).balanceOf(address(this));
-
-    if (_want > 0) {
-      // Treasury fees
-      IERC20(want).safeTransfer(
-        IController(controller).treasury(),
-        (_want * performanceTreasuryFee) / performanceTreasuryMax
-      );
-
-      // Performance fee
-      IERC20(want).safeTransfer(IController(controller).devfund(), (_want * performanceDevFee) / performanceDevMax);
-
-      deposit();
     }
   }
 

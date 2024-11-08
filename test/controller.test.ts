@@ -1,5 +1,6 @@
+import hre from "hardhat";
 import { expect } from "chai";
-import { getAddress } from "viem";
+import { getAddress, maxUint256, parseEther } from "viem";
 import { DeployFixture } from "./protocol.test";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 
@@ -121,30 +122,36 @@ export const doControllerTests = async (deploy: DeployFixture) => {
       expect(await controller.read.approvedStrategies([vaultAsset.address, strategy.address])).to.be.true;
     });
 
-    // it("should handle set new strategy and transfer all strategy balance to vault", async function () {
-    //   const { governance, timelock, vaultAsset, user, controller, strategy, vault } = await loadFixture(deploy);
-    //   const oldStrategyBalance = await vaultAsset.read.balanceOf([strategy.address]);
-    //   const mockStrategy = user.account.address; // Using user address as mock strategy
-    //   const newStrategyBalanceBefore = await vaultAsset.read.balanceOf([mockStrategy]);
+    it("should handle set new strategy and transfer all strategy balance to vault", async function () {
+      const { governance, timelock, vaultAsset, user, controller, strategy, vault } = await loadFixture(deploy);
 
-    //   // Approve new strategy
-    //   await controller.write.approveStrategy([vaultAsset.address, mockStrategy], {
-    //     account: timelock.account,
-    //   });
-    //   expect(await controller.read.approvedStrategies([vaultAsset.address, mockStrategy])).to.be.true;
-    //   // vault balance should be 0
-    //   expect(await vaultAsset.read.balanceOf([vault.address])).to.be.eq(0n);
-    //   await controller.write.setStrategy([vaultAsset.address, mockStrategy]);
-    //   // Revoke old strategy
-    //   await controller.write.revokeStrategy([vaultAsset.address, strategy.address], {
-    //     account: governance.account,
-    //   });
-    //   expect(await controller.read.approvedStrategies([vaultAsset.address, strategy.address])).to.be.false;
+      await vaultAsset.write.approve([vault.address, maxUint256]);
+      // deposit into vault
+      await vault.write.depositAll();
+      // call earn to deposit into strategy
+      await vault.write.earn();
 
-    //   // old strategy should not have any balance while the vault has the old strategies whole balance
-    //   expect(await vaultAsset.read.balanceOf([strategy.address])).to.be.eq(0n);
-    //   expect(await vaultAsset.read.balanceOf([vault.address])).to.be.eq(oldStrategyBalance);
-    // });
+      const oldStrategyBalance = await vaultAsset.read.balanceOf([strategy.address]);
+      const mockStrategy = user.account.address; // Using user address as mock strategy
+
+      // Approve new strategy
+      await controller.write.approveStrategy([vaultAsset.address, mockStrategy], {
+        account: timelock.account,
+      });
+      expect(await controller.read.approvedStrategies([vaultAsset.address, mockStrategy])).to.be.true;
+      // vault balance should be 0
+      expect(await vaultAsset.read.balanceOf([vault.address])).to.be.eq(0n);
+      await controller.write.setStrategy([vaultAsset.address, mockStrategy]);
+      // Revoke old strategy
+      await controller.write.revokeStrategy([vaultAsset.address, strategy.address], {
+        account: governance.account,
+      });
+      expect(await controller.read.approvedStrategies([vaultAsset.address, strategy.address])).to.be.false;
+
+      // old strategy should not have any balance while the vault has the old strategies whole balance
+      expect(await vaultAsset.read.balanceOf([strategy.address])).to.be.eq(0n);
+      expect(await vaultAsset.read.balanceOf([vault.address])).to.be.eq(oldStrategyBalance);
+    });
 
     it("should allow strategist or governance to set vault", async function () {
       const { governance, vaultAsset, user, controller, vault } = await loadFixture(deploy);
@@ -157,6 +164,57 @@ export const doControllerTests = async (deploy: DeployFixture) => {
           account: governance.account,
         })
       ).to.be.rejectedWith("vault already set");
+    });
+
+    it("should not allow emergency token withdraw without governance or strategist", async function () {
+      const { vaultAsset, user, controller, strategy, vault } = await loadFixture(deploy);
+
+      await expect(
+        controller.write.inCaseTokensGetStuck([vaultAsset.address, 1n], {
+          account: user.account,
+        })
+      ).to.be.rejectedWith("!governance");
+
+      await expect(
+        controller.write.inCaseStrategyTokenGetStuck([strategy.address, vaultAsset.address], {
+          account: user.account,
+        })
+      ).to.be.rejectedWith("!governance");
+    });
+
+    it("should allow inCaseTokensGetStuck", async function () {
+      const { vaultAsset, user, controller, strategy, vault, governance } = await loadFixture(deploy);
+
+      const governanceBalanceBefore = await vaultAsset.read.balanceOf([governance.account.address]);
+      const controllerBalance = (await vaultAsset.read.balanceOf([user.account.address])) / 2n;
+      await vaultAsset.write.transfer([controller.address, controllerBalance], {
+        account: user.account,
+      });
+
+      await controller.write.inCaseTokensGetStuck([vaultAsset.address, controllerBalance], {
+        account: governance.account,
+      });
+
+      const governanceBalanceAfter = await vaultAsset.read.balanceOf([governance.account.address]);
+      expect(governanceBalanceAfter).to.be.eq(governanceBalanceBefore + controllerBalance);
+    });
+
+    it("should allow inCaseStrategyTokenGetStuck", async function () {
+      const { vaultAsset, user, controller, strategy, vault, governance } = await loadFixture(deploy);
+      const mockToken = await hre.viem.deployContract("MockERC20", ["Mock Token", "MTK"]);
+      await mockToken.write.mint([strategy.address, parseEther("1000000")]);
+
+      const initialStrategyBalance = await mockToken.read.balanceOf([strategy.address]);
+      const controllerBalanceBefore = await mockToken.read.balanceOf([controller.address]);
+
+      await controller.write.inCaseStrategyTokenGetStuck([strategy.address, mockToken.address], {
+        account: governance.account,
+      });
+
+      const increasedControllerBalance =
+        (await mockToken.read.balanceOf([controller.address])) - controllerBalanceBefore;
+
+      await expect(initialStrategyBalance).to.be.eq(increasedControllerBalance);
     });
   });
 };

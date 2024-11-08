@@ -8,24 +8,25 @@ import { DeployFixture } from "./protocol.test";
 
 export const doVaultFactoryTests = (deploy: DeployFixture) => {
   describe("VaultFactory Tests", function () {
-    it.skip("should create vault with custom strategy bytecode with proper configuration", async function () {
+    it("should create vault with custom strategy bytecode with proper configuration", async function () {
       const {
         governance,
         strategist,
         timelock,
         devfund,
         treasury,
-        vaultAsset,
-        VaultFactory,
+        vaultFactory: VaultFactory,
         strategyBytecode,
         strategyExtraParams,
       } = await loadFixture(deploy);
 
       if (!strategyBytecode) throw new Error("Failed to get strategy bytecode");
 
+      const vaultAsset = await hre.viem.deployContract("MockERC20", ["Mock Token", "MTK"]);
+
       // Create vault with custom strategy bytecode
       await VaultFactory.write.createVault([
-        governance.account.address,
+        vaultAsset.address, // use some other token
         governance.account.address,
         strategist.account.address,
         timelock.account.address,
@@ -39,7 +40,15 @@ export const doVaultFactoryTests = (deploy: DeployFixture) => {
       const vaultAddress = await VaultFactory.read.vaults([vaultAsset.address]);
       expect(vaultAddress).to.not.equal(zeroAddress);
 
-      await testVaultConfiguration(VaultFactory, vaultAsset, governance, strategist, timelock, devfund, treasury);
+      await testVaultConfiguration(
+        VaultFactory,
+        vaultAsset as unknown as ContractTypesMap["ERC20"],
+        governance,
+        strategist,
+        timelock,
+        devfund,
+        treasury
+      );
     });
 
     it("should fail when non-governance tries to create vault with custom strategy bytecode", async function () {
@@ -51,7 +60,7 @@ export const doVaultFactoryTests = (deploy: DeployFixture) => {
         treasury,
         user,
         vaultAsset,
-        VaultFactory,
+        vaultFactory: VaultFactory,
         strategyBytecode,
         strategyExtraParams,
       } = await loadFixture(deploy);

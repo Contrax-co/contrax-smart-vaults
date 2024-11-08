@@ -21,8 +21,22 @@ abstract contract ZapperBase is IZapper {
   uint256 public constant minimumAmount = 1000;
   mapping(address => bool) public whitelistedVaults;
 
-  constructor(address _wrappedNative, address _usdcToken, address _swapRouter, address[] memory _vaultsToWhitelist) {
+  constructor(
+    address _governance,
+    address _wrappedNative,
+    address _usdcToken,
+    address _swapRouter,
+    address[] memory _vaultsToWhitelist
+  ) {
     // Safety checks to ensure wrappedNative token address
+    require(
+      _wrappedNative != address(0) ||
+        _usdcToken != address(0) ||
+        _swapRouter != address(0) ||
+        _governance != address(0),
+      "Invalid addresses"
+    );
+    governance = _governance;
     wrappedNative = IWETH(_wrappedNative);
     wrappedNative.deposit{value: 0}();
     wrappedNative.withdraw(0);
@@ -65,6 +79,8 @@ abstract contract ZapperBase is IZapper {
   //returns DUST
   function _returnAssets(address[] memory tokens) internal returns (ReturnedAsset[] memory returnedAssets) {
     uint256 balance;
+
+    returnedAssets = new ReturnedAsset[](tokens.length);
     for (uint256 i; i < tokens.length; i++) {
       balance = IERC20(tokens[i]).balanceOf(address(this));
       if (balance > 0) {
@@ -139,7 +155,19 @@ abstract contract ZapperBase is IZapper {
     uint256 tokenAmountOutMin,
     IERC20 tokenIn,
     uint256 tokenInAmount
-  ) external onlyWhitelistedVaults(address(vault)) returns (uint256 shares, ReturnedAsset[] memory returnedAssets) {
+  )
+    external
+    payable
+    onlyWhitelistedVaults(address(vault))
+    returns (uint256 shares, ReturnedAsset[] memory returnedAssets)
+  {
+    // if eth is the tokenIn, we need to convert it to the wrappedNative
+    if (address(tokenIn) == address(0)) {
+      require(msg.value >= minimumAmount, "Insignificant input amount");
+      wrappedNative.deposit{value: msg.value}();
+      tokenIn = wrappedNative;
+      tokenInAmount = msg.value;
+    }
     require(tokenInAmount >= minimumAmount, "Insignificant input amount");
     require(IERC20(tokenIn).allowance(msg.sender, address(this)) >= tokenInAmount, "Input token is not approved");
     IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), tokenInAmount);
@@ -159,8 +187,13 @@ abstract contract ZapperBase is IZapper {
   {
     IVault(vault).safeTransferFrom(msg.sender, address(this), withdrawAmount);
     IVault(vault).withdraw(withdrawAmount);
+    // if eth is the desiredToken, we need to convert it to the wrappedNative
+    if (address(desiredToken) == address(0)) {
+      desiredToken = wrappedNative;
+    }
     (tokenOutAmount, returnedAssets) = _afterWithdraw(vault, desiredToken);
     require(tokenOutAmount >= desiredTokenOutMin, "zapOut: Insufficient output amount");
+    emit ZapOut(msg.sender, address(vault), address(desiredToken), tokenOutAmount, withdrawAmount);
   }
 
   function zapOutAndSwapEth(

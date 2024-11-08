@@ -18,6 +18,11 @@ const doGammaTest = async () => {
 
       // Deploy the GammaVaultFactory
       const VaultFactory = await hre.viem.deployContract("GammaVaultFactory", [governance.account.address]);
+      // TODO: Remove mock
+      const swapRouter = await hre.viem.deployContract("MockSwapRouter", [governance.account.address]);
+      const wrappedNative = await hre.viem.deployContract("MockWETH", []);
+      const usdc = await hre.viem.deployContract("MockERC20", ["USD Coin", "USDC"]);
+      const zapper = await hre.viem.deployContract("Zapper", []);
 
       // Create vault with custom strategy bytecode
       await VaultFactory.write.createVault([
@@ -49,9 +54,14 @@ const doGammaTest = async () => {
         vault,
         strategy: strategy as unknown as ContractTypesMap["StrategyBase"],
         controller,
-        VaultFactory: VaultFactory as unknown as ContractTypesMap["VaultFactoryBase"],
+        vaultFactory: VaultFactory as unknown as ContractTypesMap["VaultFactoryBase"],
         strategyBytecode: GammaStrategyBytecode as Address,
         strategyExtraParams: "0x",
+        maxSlippage: 1n,
+        swapRouter: swapRouter as unknown as ContractTypesMap["ISwapRouter"],
+        wrappedNative: wrappedNative as unknown as ContractTypesMap["MockWETH"],
+        usdc: usdc as unknown as ContractTypesMap["ERC20"],
+        zapper: zapper as unknown as ContractTypesMap["ZapperBase"],
       };
     };
   };
