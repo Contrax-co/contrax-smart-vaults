@@ -268,7 +268,7 @@ Abstract base contract for Strategies.
 
 ### VaultFactoryBase.sol
 
-Facilitates the creation of new Vaults, Controllers, and Strategies.
+An abstract base contract that facilitates the creation of new Vaults, Controllers, and Strategies.
 
 - **Key Functions**:
   - `createVault`: Deploys and sets up a new Vault along with its Controller and Strategy.
@@ -287,6 +287,22 @@ Handles token swaps across different decentralized exchanges (DEXes).
 - **Key Functions**:
   - `swap`: Swaps tokens using the specified DEX.
   - `getQuoteV3`: Retrieves a quote for a token swap on Uniswap V3 or Sushiswap V3.
+
+### ZapperBase.sol
+
+An abstract base contract that facilitates the creation of protocol-specific Zappers that handle token conversions and vault interactions.
+
+- **Key Functions**:
+  - `zapIn`: Converts and deposits a token into a vault
+  - `zapInETH`: Converts and deposits ETH into a vault
+  - `zapOutAndSwap`: Withdraws from a vault and converts to desired token
+  - `zapOutAndSwapEth`: Withdraws from a vault and converts to ETH
+- **Key Features**:
+  - Whitelisted vault management
+  - Dust token return handling
+  - Native ETH wrapping/unwrapping
+  - Governance controls
+  - Swap router integration
 
 ---
 
