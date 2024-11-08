@@ -17,7 +17,7 @@
     "hardhat": "2.22.10",
     "hardhat-chai-matchers-viem": "^2.0.8",
     "hardhat-gas-reporter": "1.0.8",
-    "solidity-coverage": "0.8.0",
+    "solidity-coverage": "^0.8.13",
     "ts-node": ">=8.0.0",
     "typescript": "~5.0.4",
     "viem": "2.21.22"

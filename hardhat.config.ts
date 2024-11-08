@@ -1,6 +1,7 @@
 import type { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "hardhat-chai-matchers-viem";
+import "solidity-coverage";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -20,4 +21,3 @@ const config: HardhatUserConfig = {
 };
 
 export default config;
-
