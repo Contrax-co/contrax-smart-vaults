@@ -92,6 +92,7 @@ const doMockTest = async () => {
         strategyBytecode: MockStrategyBytecode as Address,
         strategyExtraParams: encodeAbiParameters([{ type: "address" }], [staking.address]),
         maxSlippage: 1n,
+        usdcDecimals: 6,
       };
     };
   };
@@ -163,11 +164,12 @@ const doMockTest = async () => {
         strategyBytecode: MockStrategyBytecode as Address,
         strategyExtraParams: encodeAbiParameters([{ type: "address" }], [staking.address]),
         maxSlippage: 1n,
+        usdcDecimals: 6,
       };
     };
   };
 
-  describe("Mock Test", function () {
+  describe("Mock Protocol Test", function () {
     it("should create a mock vault with proper configuration", async function () {
       const {
         governance,
@@ -239,14 +241,14 @@ const doMockTest = async () => {
     });
   });
 
-  // doProtocolTest({
-  //   protocolName: "Mock with manual setup",
-  //   vaultAssets: ["0x"],
-  //   getDeployFixture: getDeployFixtureManualSetup,
-  // });
+  doProtocolTest({
+    protocolName: "Manual setup",
+    vaultAssets: ["0x"],
+    getDeployFixture: getDeployFixtureManualSetup,
+  });
 
   doProtocolTest({
-    protocolName: "Mock with factory setup",
+    protocolName: "Factory setup",
     vaultAssets: ["0x"],
     getDeployFixture: getDeployFixtureVaultFactorySetup,
   });

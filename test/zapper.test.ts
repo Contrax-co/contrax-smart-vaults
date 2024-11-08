@@ -6,10 +6,8 @@ import { DeployFixture } from "./protocol.test";
 
 export const doZapperTests = (deploy: DeployFixture) => {
   describe("Zapper Tests", async function () {
-    const { usdc } = await loadFixture(deploy);
-    const usdcDecimals = await usdc.read.decimals();
-
     describe("Initialization", function () {
+      // Verify the zapper contract is initialized with the correct configuration
       it("should initialize with correct values", async function () {
         const { zapper, wrappedNative, usdc, swapRouter, vault } = await loadFixture(deploy);
 
@@ -22,6 +20,7 @@ export const doZapperTests = (deploy: DeployFixture) => {
     });
 
     describe("Governance Functions", function () {
+      // Test governance's ability to add new vaults to the whitelist
       it("should allow governance to whitelist vault", async function () {
         const { zapper, governance, vaultAsset, timelock, controller } = await loadFixture(deploy);
 
@@ -43,6 +42,7 @@ export const doZapperTests = (deploy: DeployFixture) => {
         expect(await zapper.read.whitelistedVaults([newVault.address])).to.be.true;
       });
 
+      // Test governance's ability to update the swap router address
       it("should allow governance to update swap router", async function () {
         const { zapper, governance, wrappedNative } = await loadFixture(deploy);
 
@@ -59,6 +59,7 @@ export const doZapperTests = (deploy: DeployFixture) => {
         expect(await zapper.read.swapRouter()).to.equal(getAddress(newSwapRouter.address));
       });
 
+      // Verify access control - only governance can whitelist vaults
       it("should prevent non-governance from whitelisting vault", async function () {
         const { zapper, vaultAsset, governance, timelock, controller, user } = await loadFixture(deploy);
 
@@ -78,6 +79,8 @@ export const doZapperTests = (deploy: DeployFixture) => {
     });
 
     describe("Zap Operations", function () {
+      // Test the basic ETH zap-in functionality
+      // Users should be able to deposit ETH and receive vault shares
       it("should successfully zap in ETH", async function () {
         const { zapper, vault, user } = await loadFixture(deploy);
 
@@ -92,6 +95,8 @@ export const doZapperTests = (deploy: DeployFixture) => {
         ).to.emit(zapper, "ZapIn");
       });
 
+      // Verify minimum amount check for ETH deposits
+      // Prevents dust attacks and ensures meaningful transactions
       it("should reject ETH zap with insufficient amount", async function () {
         const { zapper, vault, user } = await loadFixture(deploy);
 
@@ -106,6 +111,8 @@ export const doZapperTests = (deploy: DeployFixture) => {
         ).to.be.rejectedWith("Insignificant input amount");
       });
 
+      // Verify vault whitelist protection
+      // Users should not be able to zap into non-whitelisted vaults
       it("should reject zap to non-whitelisted vault", async function () {
         const { zapper, vaultAsset, governance, timelock, controller, user } = await loadFixture(deploy);
 
@@ -128,8 +135,10 @@ export const doZapperTests = (deploy: DeployFixture) => {
     });
 
     describe("Zap In Operations", function () {
+      // Test the token zap-in functionality
+      // Users should be able to deposit tokens (e.g., USDC) and receive vault shares
       it("should successfully zap in tokens", async function () {
-        const { zapper, vault, usdc, user } = await loadFixture(deploy);
+        const { zapper, vault, usdc, user, usdcDecimals } = await loadFixture(deploy);
 
         const zapAmount = parseUnits("1000", usdcDecimals); // Use dynamic decimals
 
@@ -145,8 +154,10 @@ export const doZapperTests = (deploy: DeployFixture) => {
         ).to.emit(zapper, "ZapIn");
       });
 
+      // Verify token approval requirement
+      // Users must approve tokens before zapping in
       it("should reject token zap without approval", async function () {
-        const { zapper, vault, usdc, user } = await loadFixture(deploy);
+        const { zapper, vault, usdc, user, usdcDecimals } = await loadFixture(deploy);
 
         const zapAmount = parseUnits("1000", usdcDecimals); // Use dynamic decimals
 
@@ -159,6 +170,8 @@ export const doZapperTests = (deploy: DeployFixture) => {
     });
 
     describe("Zap Out Operations", function () {
+      // Test ETH withdrawal functionality
+      // Users should be able to burn vault shares and receive ETH
       it("should successfully zap out to ETH", async function () {
         const { zapper, vault, user } = await loadFixture(deploy);
 
@@ -185,8 +198,10 @@ export const doZapperTests = (deploy: DeployFixture) => {
         ).to.emit(zapper, "ZapOut");
       });
 
+      // Test token withdrawal functionality
+      // Users should be able to burn vault shares and receive tokens (e.g., USDC)
       it("should successfully zap out to USDC", async function () {
-        const { zapper, vault, usdc, user } = await loadFixture(deploy);
+        const { zapper, vault, usdc, user, usdcDecimals } = await loadFixture(deploy);
 
         // First zap in some ETH to get vault shares
         const zapInAmount = parseEther("1");
@@ -211,6 +226,7 @@ export const doZapperTests = (deploy: DeployFixture) => {
         ).to.emit(zapper, "ZapOut");
       });
 
+      // Verify vault share approval requirement for withdrawals
       it("should reject zap out without approval", async function () {
         const { zapper, vault, user } = await loadFixture(deploy);
 
@@ -232,6 +248,7 @@ export const doZapperTests = (deploy: DeployFixture) => {
         ).to.be.rejected;
       });
 
+      // Verify vault whitelist protection for withdrawals
       it("should reject zap out from non-whitelisted vault", async function () {
         const { zapper, vaultAsset, governance, timelock, controller, user } = await loadFixture(deploy);
 
@@ -249,6 +266,8 @@ export const doZapperTests = (deploy: DeployFixture) => {
         ).to.be.rejectedWith("Vault is not whitelisted");
       });
 
+      // Test minimum output amount protection
+      // Ensures users do not receive less than their specified minimum amount
       it("should respect minimum output amount", async function () {
         const { zapper, vault, user } = await loadFixture(deploy);
 
@@ -277,6 +296,8 @@ export const doZapperTests = (deploy: DeployFixture) => {
     });
 
     describe("Slippage Protection", function () {
+      // Test slippage protection for ETH deposits
+      // Users should be protected from receiving fewer shares than expected
       it("should respect minimum shares on zap in with ETH", async function () {
         const { zapper, vault, user } = await loadFixture(deploy);
 
@@ -291,8 +312,9 @@ export const doZapperTests = (deploy: DeployFixture) => {
         ).to.be.rejectedWith("zapIn: Insufficient output vault shares");
       });
 
+      // Test slippage protection for token deposits
       it("should respect minimum shares on zap in with tokens", async function () {
-        const { zapper, vault, usdc, user } = await loadFixture(deploy);
+        const { zapper, vault, usdc, user, usdcDecimals } = await loadFixture(deploy);
 
         const zapAmount = parseEther("1000");
         const minShares = parseEther("1001");
@@ -308,6 +330,7 @@ export const doZapperTests = (deploy: DeployFixture) => {
         ).to.be.rejectedWith("zapIn: Insufficient output vault shares");
       });
 
+      // Test slippage protection for ETH withdrawals
       it("should respect minimum output shares on zap out to ETH", async function () {
         const { zapper, vault, user } = await loadFixture(deploy);
 
@@ -332,8 +355,9 @@ export const doZapperTests = (deploy: DeployFixture) => {
         ).to.be.rejectedWith("zapOut: Insufficient output amount");
       });
 
+      // Test slippage protection for token withdrawals
       it("should respect minimum output shares on zap out to USDC", async function () {
-        const { zapper, vault, usdc, user } = await loadFixture(deploy);
+        const { zapper, vault, usdc, user, usdcDecimals } = await loadFixture(deploy);
 
         // First zap in some USDC
         const zapInAmount = parseUnits("1000", usdcDecimals); // Use dynamic decimals
@@ -358,6 +382,7 @@ export const doZapperTests = (deploy: DeployFixture) => {
         ).to.be.rejectedWith("zapOut: Insufficient output amount");
       });
 
+      // Test successful execution with reasonable slippage settings for ETH
       it("should successfully execute with reasonable slippage tolerance with ETH", async function () {
         const { zapper, vault, user, maxSlippage: maxWithdrawSlippage } = await loadFixture(deploy);
 
@@ -386,6 +411,7 @@ export const doZapperTests = (deploy: DeployFixture) => {
         ).to.emit(zapper, "ZapOut");
       });
 
+      // Test successful execution with reasonable slippage settings for tokens
       it("should successfully execute with reasonable slippage tolerance with USDC", async function () {
         const { zapper, vault, usdc, user, maxSlippage: maxWithdrawSlippage } = await loadFixture(deploy);
 
@@ -419,6 +445,8 @@ export const doZapperTests = (deploy: DeployFixture) => {
     });
 
     describe("Zap Out Amount Verification", function () {
+      // Verify that ETH withdrawals return the expected amount within slippage bounds
+      // Accounts for gas costs in the calculation
       it("should return expected amount within slippage on ETH zap out", async function () {
         const { zapper, vault, user, maxSlippage: maxWithdrawSlippage } = await loadFixture(deploy);
         const publicClient = await hre.viem.getPublicClient();
@@ -466,8 +494,9 @@ export const doZapperTests = (deploy: DeployFixture) => {
         expect(actualReceived).to.be.lte(zapInAmount);
       });
 
+      // Verify that token withdrawals return the expected amount within slippage bounds
       it("should return expected amount within slippage on USDC zap out", async function () {
-        const { zapper, vault, usdc, user, maxSlippage: maxWithdrawSlippage } = await loadFixture(deploy);
+        const { zapper, vault, usdc, user, maxSlippage: maxWithdrawSlippage, usdcDecimals } = await loadFixture(deploy);
 
         // Initial zap in with USDC
         const zapInAmount = parseUnits("1000", usdcDecimals); // Use dynamic decimals

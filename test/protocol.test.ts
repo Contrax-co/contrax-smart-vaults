@@ -27,6 +27,7 @@ export type DeployFixture = (doSetup?: boolean) => Promise<{
   strategyBytecode: Address;
   strategyExtraParams: Address;
   maxSlippage: bigint;
+  usdcDecimals: number;
 }>;
 
 export const doProtocolTest = async (params: {
@@ -41,16 +42,16 @@ export const doProtocolTest = async (params: {
     // const vaultAssetName = await vaultAssetContract.read.name();
 
     // TODO: get vaultAssetName from contract
-    const vaultAssetName = "some token";
+    const vaultAssetName = "{some} token";
 
     describe(`${params.protocolName} ${vaultAssetName} Vault Test`, function () {
       doVaultFactoryTests(deployFixure);
 
+      doVaultTests(deployFixure);
+
       doControllerTests(deployFixure);
 
       doStrategyTests(deployFixure);
-
-      doVaultTests(deployFixure);
 
       doZapperTests(deployFixure);
     });

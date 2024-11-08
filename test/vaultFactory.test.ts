@@ -22,9 +22,10 @@ export const doVaultFactoryTests = (deploy: DeployFixture) => {
 
       if (!strategyBytecode) throw new Error("Failed to get strategy bytecode");
 
+      // Deploy a mock token to use as the vault's asset
       const vaultAsset = await hre.viem.deployContract("MockERC20", ["Mock Token", "MTK"]);
 
-      // Create vault with custom strategy bytecode
+      // Create vault with custom strategy bytecode and verify all configurations
       await VaultFactory.write.createVault([
         vaultAsset.address, // use some other token
         governance.account.address,
@@ -33,13 +34,14 @@ export const doVaultFactoryTests = (deploy: DeployFixture) => {
         devfund.account.address,
         treasury.account.address,
         strategyBytecode,
-        strategyExtraParams, // extra params
+        strategyExtraParams,
       ]);
 
-      // Verify vault was created
+      // Verify vault was created with non-zero address
       const vaultAddress = await VaultFactory.read.vaults([vaultAsset.address]);
       expect(vaultAddress).to.not.equal(zeroAddress);
 
+      // Test all component configurations
       await testVaultConfiguration(
         VaultFactory,
         vaultAsset as unknown as ContractTypesMap["ERC20"],
@@ -51,6 +53,11 @@ export const doVaultFactoryTests = (deploy: DeployFixture) => {
       );
     });
 
+    /**
+     * Tests access control for vault creation.
+     * Verifies that only governance can create new vaults.
+     * Attempts to create a vault from a non-governance account and expects it to fail.
+     */
     it("should fail when non-governance tries to create vault with custom strategy bytecode", async function () {
       const {
         governance,
@@ -65,7 +72,7 @@ export const doVaultFactoryTests = (deploy: DeployFixture) => {
         strategyExtraParams,
       } = await loadFixture(deploy);
 
-      // Try to create vault from non-governance account
+      // Attempt vault creation from non-governance account (should fail)
       await expect(
         VaultFactory.write.createVault(
           [
@@ -85,6 +92,15 @@ export const doVaultFactoryTests = (deploy: DeployFixture) => {
   });
 };
 
+/**
+ * Helper function to verify the complete configuration of a newly created vault system.
+ * Checks:
+ * 1. Vault exists and is properly linked to its asset
+ * 2. Controller exists and is properly configured
+ * 3. Strategy exists and is properly linked
+ * 4. All governance roles are correctly set
+ * 5. All component relationships are properly established
+ */
 export const testVaultConfiguration = async (
   VaultFactory: ContractTypesMap["VaultFactoryBase"],
   vaultAsset: ContractTypesMap["ERC20"],
@@ -94,26 +110,26 @@ export const testVaultConfiguration = async (
   devfund: WalletClient,
   treasury: WalletClient
 ) => {
-  // Get vault address
+  // Verify vault was deployed and registered
   const vaultAddress = await VaultFactory.read.vaults([vaultAsset.address]);
   expect(vaultAddress).to.not.equal(zeroAddress);
 
-  // Get controller address
+  // Verify controller was deployed and linked
   const controllerAddress = await VaultFactory.read.controllers([vaultAddress]);
   expect(controllerAddress).to.not.equal(zeroAddress);
 
-  // Get strategy address
+  // Verify strategy was deployed and linked
   const strategyAddress = await VaultFactory.read.strategies([vaultAddress]);
   expect(strategyAddress).to.not.equal(zeroAddress);
 
-  // Verify vault configuration
+  // Verify vault configuration and permissions
   const Vault = await hre.viem.getContractAt("Vault", vaultAddress);
   expect(await Vault.read.token()).to.equal(getAddress(vaultAsset.address));
   expect(await Vault.read.governance()).to.equal(getAddress(governance.account.address));
   expect(await Vault.read.timelock()).to.equal(getAddress(timelock.account.address));
   expect(await Vault.read.controller()).to.equal(controllerAddress);
 
-  // Verify controller configuration
+  // Verify controller configuration, strategy approval, and permissions
   const Controller = await hre.viem.getContractAt("Controller", controllerAddress);
   expect(await Controller.read.strategies([vaultAsset.address])).to.equal(strategyAddress);
   expect(await Controller.read.vaults([vaultAsset.address])).to.equal(vaultAddress);
@@ -124,7 +140,7 @@ export const testVaultConfiguration = async (
   expect(await Controller.read.devfund()).to.equal(getAddress(devfund.account.address));
   expect(await Controller.read.treasury()).to.equal(getAddress(treasury.account.address));
 
-  // Verify strategy configuration
+  // Verify strategy configuration and permissions
   const Strategy = await hre.viem.getContractAt("IStrategy", strategyAddress);
   expect(await Strategy.read.want()).to.equal(getAddress(vaultAsset.address));
   expect(await Strategy.read.governance()).to.equal(getAddress(governance.account.address));
