@@ -20,47 +20,31 @@ contract SwapRouter is ISwapRouter {
 
   address public immutable wrappedNative;
 
-  // Dex
-  address public uniswapV3Factory;
-  address public uniswapV3Router;
-  address public uniswapV2Router;
+  mapping(uint8 => address) public v2Router;
+  mapping(uint8 => address) public v3Router;
+  mapping(uint8 => address) public v3Factory;
 
-  address public sushiswapV3Factory;
-  address public sushiswapV3Router;
-  address public sushiswapV2Router;
+  event SetV2Router(uint8 indexed dex, address router);
+  event SetV3Router(uint8 indexed dex, address router);
+  event SetV3Factory(uint8 indexed dex, address factory);
 
-  address public camelotV3Router;
-
-  constructor(
-    address _weth,
-    address _uniswapV3Factory,
-    address _uniswapV2Router,
-    address _uniswapV3Router,
-    address _sushiswapV3Factory,
-    address _sushiswapV2Router,
-    address _sushiswapV3Router,
-    address _camelotV3Router
-  ) {
-    require(
-      _weth != address(0) &&
-        _uniswapV2Router != address(0) &&
-        _uniswapV3Factory != address(0) &&
-        _uniswapV3Router != address(0) &&
-        _sushiswapV2Router != address(0) &&
-        _sushiswapV3Factory != address(0) &&
-        _sushiswapV3Router != address(0) &&
-        _camelotV3Router != address(0),
-      "One or more addresses are invalid"
-    );
-
-    uniswapV2Router = _uniswapV2Router;
-    uniswapV3Factory = _uniswapV3Factory;
-    uniswapV3Router = _uniswapV3Router;
-    sushiswapV2Router = _sushiswapV2Router;
-    sushiswapV3Factory = _sushiswapV3Factory;
-    sushiswapV3Router = _sushiswapV3Router;
-    camelotV3Router = _camelotV3Router;
+  constructor(address _weth) {
     wrappedNative = _weth;
+  }
+
+  function setV2Router(uint8 dex, address router) external {
+    v2Router[dex] = router;
+    emit SetV2Router(dex, router);
+  }
+
+  function setV3Router(uint8 dex, address router) external {
+    v3Router[dex] = router;
+    emit SetV3Router(dex, router);
+  }
+
+  function setV3Factory(uint8 dex, address factory) external {
+    v3Factory[dex] = factory;
+    emit SetV3Factory(dex, factory);
   }
 
   function swap(
@@ -89,15 +73,21 @@ contract SwapRouter is ISwapRouter {
     address recipient,
     DexType dex
   ) public returns (uint256 amountOut) {
-    if (dex == DexType.UNISWAP_V3) {
-      return swapV3(tokenIn, tokenOut, amountIn, amountOutMinimum, recipient, uniswapV3Router, uniswapV3Factory);
-    } else if (dex == DexType.UNISWAP_V2) {
-      return swapV2(tokenIn, tokenOut, amountIn, amountOutMinimum, recipient, uniswapV2Router);
-    } else if (dex == DexType.SUSHISWAP_V2) {
-      return swapV2(tokenIn, tokenOut, amountIn, amountOutMinimum, recipient, sushiswapV2Router);
-    } else if (dex == DexType.SUSHISWAP_V3) {
-      return swapV3(tokenIn, tokenOut, amountIn, amountOutMinimum, recipient, sushiswapV3Router, sushiswapV3Factory);
+    address router;
+    address factory;
+    if (dex == DexType.UNISWAP_V3 || dex == DexType.SUSHISWAP_V3) {
+      router = v3Router[uint8(dex)];
+      factory = v3Factory[uint8(dex)];
+      require(router != address(0), "v3 router not supported");
+      require(factory != address(0), "v3 factory not supported");
+      return swapV3(tokenIn, tokenOut, amountIn, amountOutMinimum, recipient, router, factory);
+    } else if (dex == DexType.UNISWAP_V2 || dex == DexType.SUSHISWAP_V2) {
+      router = v2Router[uint8(dex)];
+      require(router != address(0), "v2 router not supported");
+      return swapV2(tokenIn, tokenOut, amountIn, amountOutMinimum, recipient, router);
     } else if (dex == DexType.CAMELOT_V3) {
+      router = v3Router[uint8(dex)];
+      require(router != address(0), "v3 router not supported");
       return swapCamelotV3(tokenIn, tokenOut, amountIn, amountOutMinimum, recipient);
     }
 
@@ -127,14 +117,10 @@ contract SwapRouter is ISwapRouter {
     address recipient,
     DexType dex
   ) public returns (uint256 amountOut) {
-    if (dex == DexType.UNISWAP_V3) {
-      return swapV3WithPath(path, amountIn, amountOutMinimum, recipient, uniswapV3Router, uniswapV3Factory);
-    } else if (dex == DexType.UNISWAP_V2) {
-      return swapV2WithPath(path, amountIn, amountOutMinimum, recipient, uniswapV2Router);
-    } else if (dex == DexType.SUSHISWAP_V2) {
-      return swapV3WithPath(path, amountIn, amountOutMinimum, recipient, sushiswapV2Router, uniswapV3Factory);
-    } else if (dex == DexType.SUSHISWAP_V3) {
-      return swapV3WithPath(path, amountIn, amountOutMinimum, recipient, sushiswapV3Router, uniswapV3Factory);
+    if (dex == DexType.UNISWAP_V3 || dex == DexType.SUSHISWAP_V3) {
+      return swapV3WithPath(path, amountIn, amountOutMinimum, recipient, v3Router[uint8(dex)], v3Factory[uint8(dex)]);
+    } else if (dex == DexType.UNISWAP_V2 || dex == DexType.SUSHISWAP_V2) {
+      return swapV2WithPath(path, amountIn, amountOutMinimum, recipient, v2Router[uint8(dex)]);
     }
 
     revert("unsupported dex type");
@@ -276,7 +262,7 @@ contract SwapRouter is ISwapRouter {
     uint256 amountOutMinimum,
     address recipient
   ) internal returns (uint256 amountOut) {
-    IERC20(tokenIn).forceApprove(camelotV3Router, amountIn);
+    IERC20(tokenIn).forceApprove(v3Router[uint8(DexType.CAMELOT_V3)], amountIn);
     ICamelotRouterV3.ExactInputSingleParams memory params = ICamelotRouterV3.ExactInputSingleParams({
       tokenIn: tokenIn,
       tokenOut: tokenOut,
@@ -286,7 +272,7 @@ contract SwapRouter is ISwapRouter {
       amountOutMinimum: amountOutMinimum,
       sqrtPriceLimitX96: 0
     });
-    return ICamelotRouterV3(camelotV3Router).exactInputSingle(params);
+    return ICamelotRouterV3(v3Router[uint8(DexType.CAMELOT_V3)]).exactInputSingle(params);
   }
 
   function _getQuoteV3(
@@ -349,13 +335,9 @@ contract SwapRouter is ISwapRouter {
     uint256 amountIn,
     DexType dex
   ) public view returns (uint256 amountOut) {
-    if (dex == DexType.UNISWAP_V3) {
-      return _getQuoteV3(tokenIn, tokenOut, amountIn, uniswapV3Factory);
-    } else if (dex == DexType.SUSHISWAP_V3) {
-      return _getQuoteV3(tokenIn, tokenOut, amountIn, sushiswapV3Factory);
-    }
-
-    revert("unsupported dex type");
+    address factory = v3Factory[uint8(dex)];
+    require(factory != address(0), "unsupported dex type");
+    return _getQuoteV3(tokenIn, tokenOut, amountIn, factory);
   }
 
   function getQuoteV3WithPath(
@@ -363,12 +345,8 @@ contract SwapRouter is ISwapRouter {
     uint256 amountIn,
     DexType dex
   ) public view returns (uint256 amountOut) {
-    if (dex == DexType.UNISWAP_V3) {
-      return _getQuoteV3WithPath(path, amountIn, uniswapV3Factory);
-    } else if (dex == DexType.SUSHISWAP_V3) {
-      return _getQuoteV3WithPath(path, amountIn, sushiswapV3Factory);
-    }
-
-    revert("unsupported dex type");
+    address factory = v3Factory[uint8(dex)];
+    require(factory != address(0), "unsupported dex type");
+    return _getQuoteV3WithPath(path, amountIn, factory);
   }
 }
