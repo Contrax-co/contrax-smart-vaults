@@ -208,4 +208,10 @@ abstract contract ZapperBase is IZapper {
   {
     return zapOutAndSwap(vault, withdrawAmount, IERC20(address(0)), desiredTokenOutMin);
   }
+
+  function _approveTokenIfNeeded(address token, address spender) internal {
+    if (IERC20(token).allowance(address(this), spender) == 0) {
+      IERC20(token).approve(spender, type(uint256).max);
+    }
+  }
 }
