@@ -28,8 +28,33 @@ contract SwapRouter is ISwapRouter {
   event SetV3Router(uint8 indexed dex, address router);
   event SetV3Factory(uint8 indexed dex, address factory);
 
-  constructor(address _weth) {
+  constructor(
+    address _weth,
+    uint8[] memory v2DexIndex,
+    address[] memory v2Routers,
+    uint8[] memory v3DexIndex,
+    address[] memory v3Routers,
+    address[] memory v3Factories
+  ) {
     wrappedNative = _weth;
+    require(v2DexIndex.length == v2Routers.length, "invalid v2 router length");
+    require(
+      v3DexIndex.length == v3Routers.length && v3DexIndex.length == v3Factories.length,
+      "invalid v3 router and factory length"
+    );
+
+    for (uint8 i = 0; i < v2DexIndex.length; i++) {
+      v2Router[v2DexIndex[i]] = v2Routers[i];
+      emit SetV2Router(v2DexIndex[i], v2Routers[i]);
+    }
+    for (uint8 i = 0; i < v3DexIndex.length; i++) {
+      v3Router[v3DexIndex[i]] = v3Routers[i];
+      emit SetV3Router(v3DexIndex[i], v3Routers[i]);
+    }
+    for (uint8 i = 0; i < v3DexIndex.length; i++) {
+      v3Factory[v3DexIndex[i]] = v3Factories[i];
+      emit SetV3Factory(v3DexIndex[i], v3Factories[i]);
+    }
   }
 
   function setV2Router(uint8 dex, address router) external {
