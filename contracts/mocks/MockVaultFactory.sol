@@ -8,7 +8,7 @@ import {IStrategy} from "../interfaces/IStrategy.sol";
 import {IController} from "../interfaces/IController.sol";
 
 contract MockVaultFactory is VaultFactoryBase {
-  constructor(address _governance) VaultFactoryBase(_governance) {}
+  constructor(address _dev) VaultFactoryBase(_dev) {}
 
   function createVault(
     address _token,
@@ -18,13 +18,7 @@ contract MockVaultFactory is VaultFactoryBase {
     address _devfund,
     address _treasury,
     address _staking
-  )
-    external
-    virtual
-    onlyGovernance
-    onlyNewAsset(_token)
-    returns (IVault vault, IController controller, IStrategy strategy)
-  {
+  ) external virtual onlyDev onlyNewAsset(_token) returns (IVault vault, IController controller, IStrategy strategy) {
     // 1. create controller and vault
     (controller, vault) = _createControllerAndVault(_token, _governance, _strategist, _timelock, _devfund, _treasury);
 

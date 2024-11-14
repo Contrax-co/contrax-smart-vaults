@@ -196,7 +196,7 @@ const doMockTest = async () => {
       );
     });
 
-    it("should fail when non-governance tries to create vault", async function () {
+    it("should fail when non-dev tries to create vault", async function () {
       const {
         governance,
         strategist,
@@ -237,7 +237,7 @@ const doMockTest = async () => {
           ],
           { account: user.account }
         )
-      ).to.be.rejectedWith("!governance");
+      ).to.be.rejectedWith("!dev");
     });
   });
 
