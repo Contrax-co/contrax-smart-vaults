@@ -13,14 +13,14 @@ abstract contract VaultFactoryBase is IVaultFactory {
   mapping(address vault => address controller) public controllers;
   mapping(address vault => address strategy) public strategies;
 
-  address public governance;
+  address public dev;
 
-  constructor(address _governance) {
-    governance = _governance;
+  constructor(address _dev) {
+    dev = _dev;
   }
 
-  modifier onlyGovernance() {
-    require(msg.sender == governance, "!governance");
+  modifier onlyDev() {
+    require(msg.sender == dev, "!dev");
     _;
   }
 
@@ -29,8 +29,8 @@ abstract contract VaultFactoryBase is IVaultFactory {
     _;
   }
 
-  function setGovernance(address _governance) external onlyGovernance {
-    governance = _governance;
+  function setDev(address _dev) external onlyDev {
+    dev = _dev;
   }
 
   event VaultCreated(address indexed asset, address vault, address controller, address strategy, uint256 timestamp);
@@ -87,7 +87,7 @@ abstract contract VaultFactoryBase is IVaultFactory {
     address _treasury,
     bytes memory strategyContractCode,
     bytes memory strategyExtraParams
-  ) external onlyGovernance onlyNewAsset(_token) returns (IVault vault, IController controller, IStrategy strategy) {
+  ) external onlyDev onlyNewAsset(_token) returns (IVault vault, IController controller, IStrategy strategy) {
     (controller, vault) = _createControllerAndVault(_token, _governance, _strategist, _timelock, _devfund, _treasury);
     strategy = _deployStrategyByteCode(
       strategyContractCode,
@@ -122,12 +122,7 @@ abstract contract VaultFactoryBase is IVaultFactory {
     require(address(strategy.want()) == token, "bytecode");
   }
 
-  function setVaultData(
-    address _token,
-    address _vault,
-    address _controller,
-    address _strategy
-  ) external onlyGovernance {
+  function setVaultData(address _token, address _vault, address _controller, address _strategy) external onlyDev {
     vaults[_token] = _vault;
     controllers[_vault] = _controller;
     strategies[_vault] = _strategy;

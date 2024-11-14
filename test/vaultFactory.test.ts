@@ -58,7 +58,7 @@ export const doVaultFactoryTests = (deploy: DeployFixture) => {
      * Verifies that only governance can create new vaults.
      * Attempts to create a vault from a non-governance account and expects it to fail.
      */
-    it("should fail when non-governance tries to create vault with custom strategy bytecode", async function () {
+    it("should fail when non-dev tries to create vault with custom strategy bytecode", async function () {
       const {
         governance,
         strategist,
@@ -87,7 +87,7 @@ export const doVaultFactoryTests = (deploy: DeployFixture) => {
           ],
           { account: user.account }
         )
-      ).to.be.rejectedWith("!governance");
+      ).to.be.rejectedWith("!dev");
     });
   });
 };

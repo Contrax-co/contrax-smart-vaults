@@ -6,7 +6,7 @@ import {IStrategy} from "../interfaces/IStrategy.sol";
 import {IController} from "../interfaces/IController.sol";
 
 interface IVaultFactory {
-  function governance() external view returns (address);
+  function dev() external view returns (address);
 
   function vaults(address token) external view returns (address);
 
