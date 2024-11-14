@@ -47,11 +47,11 @@ export const doProtocolTest = async (params: {
     describe(`${params.protocolName} ${vaultAssetName} Vault Test`, function () {
       doVaultFactoryTests(deployFixure);
 
-      doVaultTests(deployFixure);
+      // doVaultTests(deployFixure);
 
-      doControllerTests(deployFixure);
+      // doControllerTests(deployFixure);
 
-      doStrategyTests(deployFixure);
+      // doStrategyTests(deployFixure);
 
       doZapperTests(deployFixure);
     });

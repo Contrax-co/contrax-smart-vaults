@@ -37,9 +37,12 @@ abstract contract ZapperBase is IZapper {
       "Invalid addresses"
     );
     governance = _governance;
+
     wrappedNative = IWETH(_wrappedNative);
+
     wrappedNative.deposit{value: 0}();
     wrappedNative.withdraw(0);
+    
     usdcToken = IERC20(_usdcToken);
     swapRouter = ISwapRouter(_swapRouter);
 

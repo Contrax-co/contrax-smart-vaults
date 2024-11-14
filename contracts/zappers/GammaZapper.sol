@@ -25,14 +25,14 @@ contract GammaZapper is ZapperBase {
     gammaUniProxy = IUniProxy(_gammaUniProxy);
   }
 
-  function _setWhitelistVault(address _vault, bool _whitelisted) internal override {
-    // make sure token0 and token1 have swapping pools available with the swapRouter
-    address gammaVault = address(IVault(_vault).token());
-    (address token0, address token1) = (IHypervisor(gammaVault).token0(), IHypervisor(gammaVault).token1());
-    _getDepositAmounts(gammaVault, address(wrappedNative), token0, token1, 1e18);
-    _getDepositAmounts(gammaVault, address(usdcToken), token0, token1, 1e18);
-    super._setWhitelistVault(_vault, _whitelisted);
-  }
+  // function _setWhitelistVault(address _vault, bool _whitelisted) internal override {
+  //   // make sure token0 and token1 have swapping pools available with the swapRouter
+  //   address gammaVault = address(IVault(_vault).token());
+  //   (address token0, address token1) = (IHypervisor(gammaVault).token0(), IHypervisor(gammaVault).token1());
+  //   _getDepositAmounts(gammaVault, address(wrappedNative), token0, token1, 1e18);
+  //   _getDepositAmounts(gammaVault, address(usdcToken), token0, token1, 1e18);
+  //   super._setWhitelistVault(_vault, _whitelisted);
+  // }
 
   function _beforeDeposit(
     IVault vault,

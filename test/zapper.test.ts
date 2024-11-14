@@ -79,6 +79,14 @@ export const doZapperTests = (deploy: DeployFixture) => {
     });
 
     describe("Zap Operations", function () {
+
+      it("User wallet contains usdc balance", async function () {
+        const { usdc, user } = await loadFixture(deploy);
+        let usdcBalance = await usdc.read.balanceOf([user.account.address]);
+        console.log("usdcBalance", usdcBalance);
+        expect(usdcBalance).to.be.gt(0);
+      });
+
       // Test the basic ETH zap-in functionality
       // Users should be able to deposit ETH and receive vault shares
       it("should successfully zap in ETH", async function () {

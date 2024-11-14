@@ -158,7 +158,7 @@ contract SwapRouter is ISwapRouter {
     address tokenOut,
     address factory
   ) public view returns (address bestPool, uint128 highestLiquidity) {
-    uint24[3] memory fees = [uint24(500), uint24(3000), uint24(10000)];
+    uint24[4] memory fees = [uint24(500), uint24(3000), uint24(1000), uint24(10000)];
 
     for (uint256 i = 0; i < fees.length; i++) {
       address poolAddress = IUniswapV3Factory(factory).getPool(tokenIn, tokenOut, fees[i]);
