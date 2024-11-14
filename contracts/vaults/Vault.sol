@@ -29,6 +29,7 @@ contract Vault is ERC20, IVault {
     address _timelock,
     address _controller
   )
+    // if the token is wrong here, we don't get a proper error message, which is troubling for debugging
     ERC20(
       string(abi.encodePacked("Contrax Vault ", ERC20(_token).name())),
       string(abi.encodePacked("ctx", ERC20(_token).symbol()))
