@@ -83,9 +83,15 @@ contract MockSwapRouter is ISwapRouter {
     return amountIn;
   }
 
-  function v2Router(uint8 dex) external view override returns (address) {}
+  function v2Router(uint8) external view override returns (address) {
+    return address(this);
+  }
 
-  function v3Router(uint8 dex) external view override returns (address) {}
+  function v3Router(uint8) external view override returns (address) {
+    return address(this);
+  }
 
-  function v3Factory(uint8 dex) external view override returns (address) {}
+  function v3Factory(uint8) external view override returns (address) {
+    return address(this);
+  }
 }

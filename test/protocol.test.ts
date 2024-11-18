@@ -6,6 +6,8 @@ import { WalletClient } from "@nomicfoundation/hardhat-viem/types";
 import { doStrategyTests } from "./strategy.test";
 import { doVaultTests } from "./vault.test";
 import { doZapperTests } from "./zapper.test";
+import { VaultAsset } from "../utils/types";
+import { doSwapRouterTests } from "./swapRouter.test";
 
 export type DeployFixture = (doSetup?: boolean) => Promise<{
   stakable: boolean;
@@ -32,19 +34,16 @@ export type DeployFixture = (doSetup?: boolean) => Promise<{
 
 export const doProtocolTest = async (params: {
   protocolName: string;
-  vaultAssets: Address[];
-  getDeployFixture: (asset: Address) => DeployFixture;
+  vaultAssets: VaultAsset[];
+  getDeployFixture: (asset: VaultAsset) => DeployFixture;
+  doProtocolSpecificTest: (asset: VaultAsset) => void;
 }) => {
   for (let i = 0; i < params.vaultAssets.length; i++) {
     const deployFixure = params.getDeployFixture(params.vaultAssets[i]);
-    // const { vaultAsset } = await loadFixture(deployFixure);
-    // const vaultAssetContract = await hre.viem.getContractAt("IERC20Metadata", vaultAsset.address);
-    // const vaultAssetName = await vaultAssetContract.read.name();
 
-    // TODO: get vaultAssetName from contract
-    const vaultAssetName = "{some} token";
+    describe(`${params.protocolName} ${params.vaultAssets[i].name} Test`, function () {
+      params.doProtocolSpecificTest(params.vaultAssets[i]);
 
-    describe(`${params.protocolName} ${vaultAssetName} Vault Test`, function () {
       doVaultFactoryTests(deployFixure);
 
       doVaultTests(deployFixure);
@@ -52,6 +51,8 @@ export const doProtocolTest = async (params: {
       doControllerTests(deployFixure);
 
       doStrategyTests(deployFixure);
+
+      doSwapRouterTests(deployFixure);
 
       doZapperTests(deployFixure);
     });

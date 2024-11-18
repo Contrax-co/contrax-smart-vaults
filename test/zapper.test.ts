@@ -480,7 +480,7 @@ export const doZapperTests = (deploy: DeployFixture) => {
         const minOutputAmount = (zapInAmount * (100n - maxWithdrawSlippage)) / 100n;
 
         // Perform zap out
-        const tx = await zapper.write.zapOutAndSwapEth([vault.address, vaultBalance, minOutputAmount], {
+        const tx = await zapper.write.zapOutAndSwapEth([vault.address, vaultBalance, 0n], {
           account: user.account,
         });
 
@@ -496,8 +496,14 @@ export const doZapperTests = (deploy: DeployFixture) => {
         const gasSpent = receipt.gasUsed * receipt.effectiveGasPrice;
         const actualReceived = finalBalance - initialBalance + gasSpent;
 
+        // Calculate slippage percentage with 2 decimal places
+        const slippagePercent = Number(((zapInAmount - actualReceived) * 10000n) / zapInAmount / 100n).toFixed(2);
+
         // Verify received amount is within slippage bounds
-        expect(actualReceived).to.be.gte(minOutputAmount);
+        expect(actualReceived).to.be.gte(
+          minOutputAmount,
+          `Excessive slippage: ${slippagePercent}% (expected max: ${Number(maxWithdrawSlippage)}%)`
+        );
         expect(actualReceived).to.be.lte(zapInAmount);
       });
 
@@ -529,7 +535,7 @@ export const doZapperTests = (deploy: DeployFixture) => {
         const minOutputAmount = (zapInAmount * (100n - maxWithdrawSlippage)) / 100n;
 
         // Perform zap out
-        await zapper.write.zapOutAndSwap([vault.address, vaultBalance, usdc.address, minOutputAmount], {
+        await zapper.write.zapOutAndSwap([vault.address, vaultBalance, usdc.address, 0n], {
           account: user.account,
         });
 
@@ -539,8 +545,14 @@ export const doZapperTests = (deploy: DeployFixture) => {
         // Calculate actual received amount
         const actualReceived = finalUsdcBalance - initialUsdcBalance;
 
+        // Calculate slippage percentage with 2 decimal places
+        const slippagePercent = Number(((zapInAmount - actualReceived) * 10000n) / zapInAmount / 100n).toFixed(2);
+
         // Verify received amount is within slippage bounds
-        expect(actualReceived).to.be.gte(minOutputAmount);
+        expect(actualReceived).to.be.gte(
+          minOutputAmount,
+          `Excessive slippage: ${slippagePercent}% (expected max: ${Number(maxWithdrawSlippage)}%)`
+        );
         expect(actualReceived).to.be.lte(zapInAmount);
       });
     });

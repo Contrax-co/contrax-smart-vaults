@@ -6,169 +6,170 @@ import { ContractTypesMap } from "hardhat/types";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { testVaultConfiguration } from "./vaultFactory.test";
+import { VaultAsset } from "../utils/types";
 
-const doMockTest = async () => {
-  const getDeployFixtureManualSetup = (asset: Address): DeployFixture => {
-    return async () => {
-      const [governance, strategist, timelock, devfund, treasury, user] = await hre.viem.getWalletClients();
+const getDeployFixtureManualSetup = (_: VaultAsset): DeployFixture => {
+  return async () => {
+    const [governance, strategist, timelock, devfund, treasury, user] = await hre.viem.getWalletClients();
 
-      const vaultAsset = await hre.viem.deployContract("MockERC20", ["Mock Token", "MTK"]);
-      const usdc = await hre.viem.deployContract("MockERC20", ["USD Coin", "USDC"]);
-      const wrappedNative = await hre.viem.deployContract("MockWETH", []);
-      const swapRouter = await hre.viem.deployContract("MockSwapRouter", [wrappedNative.address]);
+    const vaultAsset = await hre.viem.deployContract("MockERC20", ["Mock Token", "MTK"]);
+    const usdc = await hre.viem.deployContract("MockERC20", ["USD Coin", "USDC"]);
+    const wrappedNative = await hre.viem.deployContract("MockWETH", []);
+    const swapRouter = await hre.viem.deployContract("MockSwapRouter", [wrappedNative.address]);
 
-      // just for compatibility with the vault factory test
-      const VaultFactory = await hre.viem.deployContract("MockVaultFactory", [governance.account.address]);
+    // just for compatibility with the vault factory test
+    const VaultFactory = await hre.viem.deployContract("MockVaultFactory", [governance.account.address]);
 
-      // Deploy Mock vault asset
-      const rewardToken = vaultAsset; //await hre.viem.deployContract("MockERC20", ["Reward Token", "RWT"]);
-      const staking = await hre.viem.deployContract("MockStaking", [vaultAsset.address, rewardToken.address]);
+    // Deploy Mock vault asset
+    const rewardToken = vaultAsset; //await hre.viem.deployContract("MockERC20", ["Reward Token", "RWT"]);
+    const staking = await hre.viem.deployContract("MockStaking", [vaultAsset.address, rewardToken.address]);
 
-      // Deploy Controller first
-      const controller = await hre.viem.deployContract("Controller", [
+    // Deploy Controller first
+    const controller = await hre.viem.deployContract("Controller", [
+      governance.account.address,
+      strategist.account.address,
+      timelock.account.address,
+      devfund.account.address,
+      treasury.account.address,
+    ]);
+
+    // Deploy Strategy
+    const strategy = (await hre.viem.deployContract("MockStrategy", [
+      vaultAsset.address,
+      governance.account.address,
+      strategist.account.address,
+      controller.address,
+      timelock.account.address,
+      staking.address,
+    ])) as unknown as ContractTypesMap["StrategyBase"];
+
+    // Deploy Vault
+    const vault = await hre.viem.deployContract("Vault", [
+      vaultAsset.address,
+      governance.account.address,
+      timelock.account.address,
+      controller.address,
+    ]);
+
+    await controller.write.setVault([vaultAsset.address, vault.address], {
+      account: governance.account,
+    });
+    await controller.write.approveStrategy([vaultAsset.address, strategy.address], {
+      account: timelock.account,
+    });
+    await controller.write.setStrategy([vaultAsset.address, strategy.address], {
+      account: governance.account,
+    });
+
+    const zapper = await hre.viem.deployContract("MockZapper", [
+      governance.account.address,
+      wrappedNative.address,
+      usdc.address,
+      swapRouter.address,
+      [vault.address],
+    ]);
+
+    await vaultAsset.write.mint([user.account.address, parseEther("1000000")]);
+    await usdc.write.mint([user.account.address, parseEther("1000000")]);
+
+    return {
+      stakable: true,
+      governance,
+      strategist,
+      timelock,
+      devfund,
+      treasury,
+      user,
+      vault,
+      controller,
+      strategy: strategy as unknown as ContractTypesMap["StrategyBase"],
+      vaultFactory: VaultFactory as unknown as ContractTypesMap["VaultFactoryBase"],
+      vaultAsset: vaultAsset as unknown as ContractTypesMap["ERC20"],
+      usdc: usdc as unknown as ContractTypesMap["ERC20"],
+      wrappedNative: wrappedNative as unknown as ContractTypesMap["IWETH"],
+      swapRouter: swapRouter as unknown as ContractTypesMap["ISwapRouter"],
+      zapper: zapper as unknown as ContractTypesMap["ZapperBase"],
+      strategyBytecode: MockStrategyBytecode as Address,
+      strategyExtraParams: encodeAbiParameters([{ type: "address" }], [staking.address]),
+      maxSlippage: 1n,
+      usdcDecimals: 6,
+    };
+  };
+};
+
+const getDeployFixtureVaultFactorySetup = (_: VaultAsset): DeployFixture => {
+  return async () => {
+    const [governance, strategist, timelock, devfund, treasury, user] = await hre.viem.getWalletClients();
+
+    const vaultAsset = await hre.viem.deployContract("MockERC20", ["Mock Token", "MTK"]);
+    const usdc = await hre.viem.deployContract("MockERC20", ["USD Coin", "USDC"]);
+    const wrappedNative = await hre.viem.deployContract("MockWETH", []);
+    const swapRouter = await hre.viem.deployContract("MockSwapRouter", [wrappedNative.address]);
+
+    const VaultFactory = await hre.viem.deployContract("MockVaultFactory", [governance.account.address]);
+
+    // Deploy Mock vault asset
+    const rewardToken = vaultAsset; //await hre.viem.deployContract("MockERC20", ["Reward Token", "RWT"]);
+    const staking = await hre.viem.deployContract("MockStaking", [vaultAsset.address, rewardToken.address]);
+
+    // Create vault with custom strategy bytecode
+    await expect(
+      VaultFactory.write.createVault([
+        vaultAsset.address,
         governance.account.address,
         strategist.account.address,
         timelock.account.address,
         devfund.account.address,
         treasury.account.address,
-      ]);
-
-      // Deploy Strategy
-      const strategy = (await hre.viem.deployContract("MockStrategy", [
-        vaultAsset.address,
-        governance.account.address,
-        strategist.account.address,
-        controller.address,
-        timelock.account.address,
         staking.address,
-      ])) as unknown as ContractTypesMap["StrategyBase"];
+      ])
+    ).to.emit(VaultFactory, "VaultCreated");
 
-      // Deploy Vault
-      const vault = await hre.viem.deployContract("Vault", [
-        vaultAsset.address,
-        governance.account.address,
-        timelock.account.address,
-        controller.address,
-      ]);
+    const vaultAddress = await VaultFactory.read.vaults([vaultAsset.address]);
+    const controllerAddress = await VaultFactory.read.controllers([vaultAddress]);
+    const strategyAddress = await VaultFactory.read.strategies([vaultAddress]);
 
-      await controller.write.setVault([vaultAsset.address, vault.address], {
-        account: governance.account,
-      });
-      await controller.write.approveStrategy([vaultAsset.address, strategy.address], {
-        account: timelock.account,
-      });
-      await controller.write.setStrategy([vaultAsset.address, strategy.address], {
-        account: governance.account,
-      });
+    const controller = await hre.viem.getContractAt("Controller", controllerAddress);
+    const vault = await hre.viem.getContractAt("Vault", vaultAddress);
+    const strategy = await hre.viem.getContractAt("StrategyBase", strategyAddress);
 
-      const zapper = await hre.viem.deployContract("MockZapper", [
-        governance.account.address,
-        wrappedNative.address,
-        usdc.address,
-        swapRouter.address,
-        [vault.address],
-      ]);
+    const zapper = await hre.viem.deployContract("MockZapper", [
+      governance.account.address,
+      wrappedNative.address,
+      usdc.address,
+      swapRouter.address,
+      [vault.address],
+    ]);
 
-      await vaultAsset.write.mint([user.account.address, parseEther("1000000")]);
-      await usdc.write.mint([user.account.address, parseEther("1000000")]);
+    await vaultAsset.write.mint([user.account.address, parseEther("1000000")]);
+    await usdc.write.mint([user.account.address, parseEther("1000000")]);
 
-      return {
-        stakable: true,
-        governance,
-        strategist,
-        timelock,
-        devfund,
-        treasury,
-        user,
-        vault,
-        controller,
-        strategy: strategy as unknown as ContractTypesMap["StrategyBase"],
-        vaultFactory: VaultFactory as unknown as ContractTypesMap["VaultFactoryBase"],
-        vaultAsset: vaultAsset as unknown as ContractTypesMap["ERC20"],
-        usdc: usdc as unknown as ContractTypesMap["ERC20"],
-        wrappedNative: wrappedNative as unknown as ContractTypesMap["IWETH"],
-        swapRouter: swapRouter as unknown as ContractTypesMap["ISwapRouter"],
-        zapper: zapper as unknown as ContractTypesMap["ZapperBase"],
-        strategyBytecode: MockStrategyBytecode as Address,
-        strategyExtraParams: encodeAbiParameters([{ type: "address" }], [staking.address]),
-        maxSlippage: 1n,
-        usdcDecimals: 6,
-      };
+    return {
+      stakable: true,
+      governance,
+      strategist,
+      timelock,
+      devfund,
+      treasury,
+      user,
+      vault,
+      controller,
+      strategy: strategy as unknown as ContractTypesMap["StrategyBase"],
+      vaultFactory: VaultFactory as unknown as ContractTypesMap["VaultFactoryBase"],
+      vaultAsset: vaultAsset as unknown as ContractTypesMap["ERC20"],
+      usdc: usdc as unknown as ContractTypesMap["ERC20"],
+      wrappedNative: wrappedNative as unknown as ContractTypesMap["IWETH"],
+      swapRouter: swapRouter as unknown as ContractTypesMap["ISwapRouter"],
+      zapper: zapper as unknown as ContractTypesMap["ZapperBase"],
+      strategyBytecode: MockStrategyBytecode as Address,
+      strategyExtraParams: encodeAbiParameters([{ type: "address" }], [staking.address]),
+      maxSlippage: 1n,
+      usdcDecimals: 6,
     };
   };
+};
 
-  const getDeployFixtureVaultFactorySetup = (asset: Address): DeployFixture => {
-    return async () => {
-      const [governance, strategist, timelock, devfund, treasury, user] = await hre.viem.getWalletClients();
-
-      const vaultAsset = await hre.viem.deployContract("MockERC20", ["Mock Token", "MTK"]);
-      const usdc = await hre.viem.deployContract("MockERC20", ["USD Coin", "USDC"]);
-      const wrappedNative = await hre.viem.deployContract("MockWETH", []);
-      const swapRouter = await hre.viem.deployContract("MockSwapRouter", [wrappedNative.address]);
-
-      const VaultFactory = await hre.viem.deployContract("MockVaultFactory", [governance.account.address]);
-
-      // Deploy Mock vault asset
-      const rewardToken = vaultAsset; //await hre.viem.deployContract("MockERC20", ["Reward Token", "RWT"]);
-      const staking = await hre.viem.deployContract("MockStaking", [vaultAsset.address, rewardToken.address]);
-
-      // Create vault with custom strategy bytecode
-      await expect(
-        VaultFactory.write.createVault([
-          vaultAsset.address,
-          governance.account.address,
-          strategist.account.address,
-          timelock.account.address,
-          devfund.account.address,
-          treasury.account.address,
-          staking.address,
-        ])
-      ).to.emit(VaultFactory, "VaultCreated");
-
-      const vaultAddress = await VaultFactory.read.vaults([vaultAsset.address]);
-      const controllerAddress = await VaultFactory.read.controllers([vaultAddress]);
-      const strategyAddress = await VaultFactory.read.strategies([vaultAddress]);
-
-      const controller = await hre.viem.getContractAt("Controller", controllerAddress);
-      const vault = await hre.viem.getContractAt("Vault", vaultAddress);
-      const strategy = await hre.viem.getContractAt("StrategyBase", strategyAddress);
-
-      const zapper = await hre.viem.deployContract("MockZapper", [
-        governance.account.address,
-        wrappedNative.address,
-        usdc.address,
-        swapRouter.address,
-        [vault.address],
-      ]);
-
-      await vaultAsset.write.mint([user.account.address, parseEther("1000000")]);
-      await usdc.write.mint([user.account.address, parseEther("1000000")]);
-
-      return {
-        stakable: true,
-        governance,
-        strategist,
-        timelock,
-        devfund,
-        treasury,
-        user,
-        vault,
-        controller,
-        strategy: strategy as unknown as ContractTypesMap["StrategyBase"],
-        vaultFactory: VaultFactory as unknown as ContractTypesMap["VaultFactoryBase"],
-        vaultAsset: vaultAsset as unknown as ContractTypesMap["ERC20"],
-        usdc: usdc as unknown as ContractTypesMap["ERC20"],
-        wrappedNative: wrappedNative as unknown as ContractTypesMap["IWETH"],
-        swapRouter: swapRouter as unknown as ContractTypesMap["ISwapRouter"],
-        zapper: zapper as unknown as ContractTypesMap["ZapperBase"],
-        strategyBytecode: MockStrategyBytecode as Address,
-        strategyExtraParams: encodeAbiParameters([{ type: "address" }], [staking.address]),
-        maxSlippage: 1n,
-        usdcDecimals: 6,
-      };
-    };
-  };
-
+const doProtocolSpecificTest = (asset: VaultAsset) => {
   describe("Mock Protocol Test", function () {
     it("should create a mock vault with proper configuration", async function () {
       const {
@@ -179,7 +180,7 @@ const doMockTest = async () => {
         treasury,
         vaultAsset,
         vaultFactory: VaultFactory,
-      } = await loadFixture(getDeployFixtureVaultFactorySetup("0x"));
+      } = await loadFixture(getDeployFixtureVaultFactorySetup(asset));
 
       // Verify vault was created
       const vaultAddress = await VaultFactory.read.vaults([vaultAsset.address]);
@@ -206,7 +207,7 @@ const doMockTest = async () => {
         user,
         vaultAsset,
         vaultFactory: VaultFactory,
-      } = await loadFixture(getDeployFixtureVaultFactorySetup("0x"));
+      } = await loadFixture(getDeployFixtureVaultFactorySetup(asset));
 
       // Try to create vault from non-governance account
       await expect(
@@ -240,17 +241,21 @@ const doMockTest = async () => {
       ).to.be.rejectedWith("!dev");
     });
   });
+};
 
+const doMockTest = async () => {
   doProtocolTest({
     protocolName: "Manual setup",
-    vaultAssets: ["0x"],
+    vaultAssets: [{ name: "Mock Token", address: "0x", balanceSlot: 0 }],
     getDeployFixture: getDeployFixtureManualSetup,
+    doProtocolSpecificTest,
   });
 
   doProtocolTest({
     protocolName: "Factory setup",
-    vaultAssets: ["0x"],
+    vaultAssets: [{ name: "Mock Token", address: "0x", balanceSlot: 0 }],
     getDeployFixture: getDeployFixtureVaultFactorySetup,
+    doProtocolSpecificTest,
   });
 };
 
