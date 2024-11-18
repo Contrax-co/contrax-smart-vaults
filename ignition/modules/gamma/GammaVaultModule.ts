@@ -54,25 +54,9 @@ export const buildGammaCustomVaultModule = (m: IgnitionModuleBuilder, assetName:
 };
 
 export default buildModule("GammaVaultModule", (m) => {
-  const WpolWeth = buildGammaCustomVaultModule(m, "WpolWeth");
-  // const WbtcWeth = buildGammaCustomVaultModule(m, "WbtcWeth");
-  // const UsdcWeth = buildGammaCustomVaultModule(m, "UsdcWeth");
-
   return {
-    // WpolWeth
-    WpolWethAsset: WpolWeth.asset,
-    WpolWethVault: WpolWeth.vault,
-    WpolWethStrategy: WpolWeth.strategy,
-    WpolWethController: WpolWeth.controller,
-    // WbtcWeth
-    // WbtcWethAsset: WbtcWeth.asset,
-    // WbtcWethVault: WbtcWeth.vault,
-    // WbtcWethStrategy: WbtcWeth.strategy,
-    // WbtcWethController: WbtcWeth.controller,
-    // // UsdcWeth
-    // UsdcWethAsset: UsdcWeth.asset,
-    // UsdcWethVault: UsdcWeth.vault,
-    // UsdcWethStrategy: UsdcWeth.strategy,
-    // UsdcWethController: UsdcWeth.controller,
+    ...buildGammaCustomVaultModule(m, "WpolWeth"),
+    ...buildGammaCustomVaultModule(m, "WbtcWeth"),
+    ...buildGammaCustomVaultModule(m, "UsdcWeth"),
   };
 });
