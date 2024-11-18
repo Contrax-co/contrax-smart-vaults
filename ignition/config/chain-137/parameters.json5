@@ -1,0 +1,51 @@
+// TODO: Raise an issue on hardhat github for the global variables not working
+{
+  SwapRouterModule: {
+    governance: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    strategist: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    timelock: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    devfund: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    treasury: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    weth: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    usdc: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+    v3Routers: [
+      // Uniswap V3
+      "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+      // SushiSwap V3
+      "0x0aF89E1620b96170e2a9D0b68fEebb767eD044c3",
+    ],
+    v3Factories: [
+      // Uniswap V3
+      "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+      // SushiSwap V3
+      "0x917933899c6a5F8E37F31E19f92CdBFF7e8FF0e2",
+    ],
+    v2Routers: [
+      // Uniswap V2
+      "0xedf6066a2b290C185783862C7F4776A2C8077AD1",
+      // SushiSwap V2
+      "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506",
+    ],
+  },
+  GammaVaultFactoryModule: {
+    governance: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    strategist: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    timelock: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  },
+  GammaZapperModule: {
+    governance: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    weth: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    usdc: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+    gammaUniProxy: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  },
+  GammaVaultModule: {
+    governance: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    strategist: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    timelock: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    devfund: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    treasury: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    WpolWeth: "0x02203f2351E7aC6aB5051205172D3f772db7D814",
+    WbtcWeth: "0x4B9e26a02121a1C541403a611b542965Bd4b68Ce",
+    UsdcWeth: "0x3974fbdc22741a1632e024192111107b202f214f",
+  },
+}
