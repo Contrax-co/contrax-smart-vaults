@@ -20,18 +20,13 @@ export const depositAndEarnInVault = async (
 };
 
 export async function overwriteTokenAmount(assetAddr: Address, walletAddr: string, amount: string, slot: number = 0) {
-  
+  // Calculate the storage slot index using the slot and address
 
-    // Calculate the storage slot index using the slot and address
+  const index = keccak256(encodePacked(["uint256", "uint256"], [walletAddr as unknown as bigint, BigInt(slot)]));
 
-    const index = keccak256(
-      encodePacked(['uint256', 'uint256'], [walletAddr as unknown as bigint, BigInt(slot)])
-    );
-  
-    // Convert the amount into a 32-byte hexadecimal value
-    const BN = BigInt(amount);
-    const number = toHex(BN, { size: 32 });
-
+  // Convert the amount into a 32-byte hexadecimal value
+  const BN = BigInt(amount);
+  const number = toHex(BN, { size: 32 });
 
   // Set the storage value at the calculated index
 
@@ -54,7 +49,6 @@ export async function overwriteTokenAmount(assetAddr: Address, walletAddr: strin
 // }
 
 export async function increaseBlock(block: number) {
-  //console.log(`⌛ Advancing ${block} blocks`);
   for (let i = 1; i <= block; i++) {
     await hre.network.provider.send("evm_mine");
   }

@@ -79,11 +79,9 @@ export const doZapperTests = (deploy: DeployFixture) => {
     });
 
     describe("Zap Operations", function () {
-
       it("User wallet contains usdc balance", async function () {
         const { usdc, user } = await loadFixture(deploy);
         let usdcBalance = await usdc.read.balanceOf([user.account.address]);
-        console.log("usdcBalance", usdcBalance);
         expect(usdcBalance).to.be.gt(0);
       });
 
@@ -321,10 +319,11 @@ export const doZapperTests = (deploy: DeployFixture) => {
       });
 
       // Test slippage protection for token deposits
+      // TODO: we don't actually have an idea of how much shares should get out of the zapper, it should be the amount of tokens deposited in the vault
       it("should respect minimum shares on zap in with tokens", async function () {
         const { zapper, vault, usdc, user, usdcDecimals } = await loadFixture(deploy);
 
-        const zapAmount = parseEther("1000");
+        const zapAmount = parseUnits("1000", usdcDecimals);
         const minShares = parseEther("1001");
 
         await usdc.write.approve([zapper.address, zapAmount], {
@@ -421,10 +420,10 @@ export const doZapperTests = (deploy: DeployFixture) => {
 
       // Test successful execution with reasonable slippage settings for tokens
       it("should successfully execute with reasonable slippage tolerance with USDC", async function () {
-        const { zapper, vault, usdc, user, maxSlippage: maxWithdrawSlippage } = await loadFixture(deploy);
+        const { zapper, vault, usdc, user, usdcDecimals, maxSlippage: maxWithdrawSlippage } = await loadFixture(deploy);
 
         // Zap in with 1% minimum shares requirement
-        const zapInAmount = parseEther("1");
+        const zapInAmount = parseUnits("1000", usdcDecimals);
 
         await usdc.write.approve([zapper.address, zapInAmount], {
           account: user.account,

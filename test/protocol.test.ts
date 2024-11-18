@@ -18,7 +18,7 @@ export type DeployFixture = (doSetup?: boolean) => Promise<{
   vaultFactory: ContractTypesMap["VaultFactoryBase"];
   vaultAsset: ContractTypesMap["ERC20"];
   usdc: ContractTypesMap["ERC20"];
-  wrappedNative: ContractTypesMap["MockWETH"];
+  wrappedNative: ContractTypesMap["IWETH"];
   zapper: ContractTypesMap["ZapperBase"];
   swapRouter: ContractTypesMap["ISwapRouter"];
   vault: ContractTypesMap["Vault"];
@@ -47,11 +47,11 @@ export const doProtocolTest = async (params: {
     describe(`${params.protocolName} ${vaultAssetName} Vault Test`, function () {
       doVaultFactoryTests(deployFixure);
 
-      // doVaultTests(deployFixure);
+      doVaultTests(deployFixure);
 
-      // doControllerTests(deployFixure);
+      doControllerTests(deployFixure);
 
-      // doStrategyTests(deployFixure);
+      doStrategyTests(deployFixure);
 
       doZapperTests(deployFixure);
     });
