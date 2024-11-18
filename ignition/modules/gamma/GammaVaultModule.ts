@@ -4,13 +4,13 @@ import GammaVaultFactoryModule from "./GammaVaultFactoryModule";
 import { IgnitionModuleBuilder } from "@nomicfoundation/ignition-core";
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 
-const buildGammaCustomVaultModule = (m: IgnitionModuleBuilder, assetName: string) => {
-  m.useModule(SwapRouterModule);
-  m.useModule(GammaZapperModule);
+export const buildGammaCustomVaultModule = (m: IgnitionModuleBuilder, assetName: string) => {
+  const { swapRouter } = m.useModule(SwapRouterModule);
+  const { zapper, wrappedNative, usdc } = m.useModule(GammaZapperModule);
   const { vaultFactory } = m.useModule(GammaVaultFactoryModule);
 
   const devAccount = m.getAccount(0);
-  const assetAddress = m.getParameter(assetName);
+  const assetAddress = m.getParameter(`${assetName}.address`);
   const governance = m.getParameter("governance");
   const strategist = m.getParameter("strategist");
   const timelock = m.getParameter("timelock");
@@ -40,18 +40,39 @@ const buildGammaCustomVaultModule = (m: IgnitionModuleBuilder, assetName: string
     id: `VaultCreatedEvent_Controller_${assetName}`,
   });
 
+  const vaultWhitelistedEvent = m.call(zapper, "setWhitelistVault", [vaultParam, true], {
+    from: devAccount,
+    id: `VaultWhitelistedEvent_${assetName}`,
+  });
+
   const vault = m.contractAt("Vault", vaultParam, { id: `Vault_${assetName}` });
   const strategy = m.contractAt("GammaStrategy", strategyParam, { id: `Strategy_${assetName}` });
   const controller = m.contractAt("Controller", controllerParam, { id: `Controller_${assetName}` });
   const asset = m.contractAt("ERC20", assetParam, { id: `Asset_${assetName}` });
 
-  return { vault, strategy, controller, asset };
+  return { vault, strategy, controller, asset, vaultFactory, swapRouter, zapper, wrappedNative, usdc };
 };
 
 export default buildModule("GammaVaultModule", (m) => {
+  const WpolWeth = buildGammaCustomVaultModule(m, "WpolWeth");
+  // const WbtcWeth = buildGammaCustomVaultModule(m, "WbtcWeth");
+  // const UsdcWeth = buildGammaCustomVaultModule(m, "UsdcWeth");
+
   return {
-    ...buildGammaCustomVaultModule(m, "WpolWeth"),
-    ...buildGammaCustomVaultModule(m, "WbtcWeth"),
-    ...buildGammaCustomVaultModule(m, "UsdcWeth"),
+    // WpolWeth
+    WpolWethAsset: WpolWeth.asset,
+    WpolWethVault: WpolWeth.vault,
+    WpolWethStrategy: WpolWeth.strategy,
+    WpolWethController: WpolWeth.controller,
+    // WbtcWeth
+    // WbtcWethAsset: WbtcWeth.asset,
+    // WbtcWethVault: WbtcWeth.vault,
+    // WbtcWethStrategy: WbtcWeth.strategy,
+    // WbtcWethController: WbtcWeth.controller,
+    // // UsdcWeth
+    // UsdcWethAsset: UsdcWeth.asset,
+    // UsdcWethVault: UsdcWeth.vault,
+    // UsdcWethStrategy: UsdcWeth.strategy,
+    // UsdcWethController: UsdcWeth.controller,
   };
 });

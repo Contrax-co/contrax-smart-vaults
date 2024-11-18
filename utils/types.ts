@@ -13,3 +13,15 @@ export interface VaultAsset {
   name: string;
   balanceSlot: number;
 }
+
+export type BaseModuleParameters = {
+  governance: Address;
+  strategist: Address;
+  timelock: Address;
+  devfund: Address;
+  treasury: Address;
+  wrappedNative: Address;
+  usdc: Address;
+  usdcDecimals: number;
+  usdcBalanceSlot: number;
+} & Record<string, any>;

@@ -8,6 +8,7 @@ import { expect } from "chai";
 import { testVaultConfiguration } from "./vaultFactory.test";
 import { VaultAsset } from "../utils/types";
 
+// TODO: seperate dev from governance account
 const getDeployFixtureManualSetup = (_: VaultAsset): DeployFixture => {
   return async () => {
     const [governance, strategist, timelock, devfund, treasury, user] = await hre.viem.getWalletClients();

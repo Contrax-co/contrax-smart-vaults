@@ -2,7 +2,7 @@ import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { DexType } from "../../utils/types";
 
 export default buildModule("SwapRouterModule", (m) => {
-  const weth = m.getParameter("weth");
+  const wrappedNativeAddress = m.getParameter("wrappedNative");
 
   // we should have used a mapping instead of arrays, but ignition doesn't allow us to read the parameters
   const v3Routers = m.getParameter<string[]>("v3Routers");
@@ -13,7 +13,7 @@ export default buildModule("SwapRouterModule", (m) => {
   const v3RouterAndFactoryIndex = [DexType.UNISWAP_V3, DexType.SUSHISWAP_V3];
 
   const swapRouter = m.contract("SwapRouter", [
-    weth,
+    wrappedNativeAddress,
     v2RouterIndex,
     v2Routers,
     v3RouterAndFactoryIndex,

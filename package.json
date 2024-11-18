@@ -9,6 +9,8 @@
     "@nomicfoundation/hardhat-verify": "2.0.0",
     "@nomicfoundation/hardhat-viem": "2.0.5",
     "@nomicfoundation/ignition-core": "0.15.6",
+    "@nomiclabs/hardhat-etherscan": "3.1.8",
+    "@openzeppelin/contracts": "5.0.2",
     "@types/chai": "4.2.0",
     "@types/chai-as-promised": "7.1.6",
     "@types/mocha": ">=9.1.0",
@@ -21,11 +23,8 @@
     "solidity-coverage": "0.8.13",
     "ts-node": ">=8.0.0",
     "typescript": "~5.0.4",
-    "viem": "2.21.22"
-  },
-  "dependencies": {
-    "@nomiclabs/hardhat-etherscan": "3.1.8",
-    "@openzeppelin/contracts": "5.0.2",
+    "json5": "^2.2.3",
+    "viem": "2.21.22",
     "dotenv": "16.4.5"
   },
   "scripts": {

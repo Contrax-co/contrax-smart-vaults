@@ -119,7 +119,7 @@ For a new protocol, create a folder structured as follows:
 Run the deployment scripts to deploy the modules:
 
 ```bash
-npx hardhat ignition deploy ignition/modules/<protocol-name>/<protocol-name>VaultModule.ts --parameters ignition/config/chain-<chainId>/parameters.json5 --network <network-name> --verify
+npx hardhat ignition deploy ignition/modules/<protocol-name>/<Protocol-Name>VaultModule.ts --parameters ignition/config/chain-<chainId>/parameters.json5 --network <network-name> --verify
 ```
 
 Ensure that each module is properly registered in Hardhat Ignition and that the `parameters.json5` file is correctly configured for the network you are deploying to.
