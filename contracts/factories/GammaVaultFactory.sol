@@ -28,6 +28,6 @@ contract GammaVaultFactory is VaultFactoryBase {
     // 3. setup vault
     _setupVault(_token, vault, strategy, controller, _governance, _timelock);
 
-    emit VaultCreated(_token, address(vault), address(strategy), address(controller), block.timestamp);
+    emit VaultCreated(_token, address(vault), address(controller), address(strategy), block.timestamp);
   }
 }

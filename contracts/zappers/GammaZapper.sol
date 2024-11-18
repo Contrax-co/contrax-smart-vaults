@@ -50,6 +50,8 @@ contract GammaZapper is ZapperBase {
     );
 
     if (token0 != address(tokenIn) && token1 != address(tokenIn)) {
+      tokenIn.safeTransfer(address(swapRouter), amount0);
+      tokenIn.safeTransfer(address(swapRouter), amount1);
       swapRouter.swap(address(tokenIn), token0, amount0, 0, address(this), ISwapRouter.DexType.UNISWAP_V3);
       swapRouter.swap(address(tokenIn), token1, amount1, 0, address(this), ISwapRouter.DexType.UNISWAP_V3);
     } else {
@@ -90,36 +92,6 @@ contract GammaZapper is ZapperBase {
     returnedAssets = _returnAssets(tokens);
   }
 
-  function _processSingleTokenSwap(
-    IERC20 tokenIn,
-    address token0,
-    address token1,
-    uint256 amount0,
-    uint256 amount1
-  ) internal {
-    address tokenOut = token0;
-    uint256 amountToSwap = amount0;
-
-    if (address(tokenIn) == token0) {
-      tokenOut = token1;
-      amountToSwap = amount1;
-    }
-
-    swapRouter.swap(address(tokenIn), tokenOut, amountToSwap, 0, address(this), ISwapRouter.DexType.UNISWAP_V3);
-  }
-
-  function _getTokenBalances(address token0, address token1) internal view returns (uint256, uint256) {
-    return (IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)));
-  }
-
-  function getGammaVaultDepoistAmount(
-    address gammaVault,
-    address token,
-    uint256 _depositAmount
-  ) public view returns (uint256 minAmount, uint256 maxAmount) {
-    (minAmount, maxAmount) = IUniProxy(gammaUniProxy).getDepositAmount(gammaVault, token, _depositAmount);
-  }
-
   function _afterWithdraw(
     IVault vault,
     IERC20 desiredToken
@@ -145,6 +117,8 @@ contract GammaZapper is ZapperBase {
         address(this),
         ISwapRouter.DexType.UNISWAP_V3
       );
+    } else {
+      tokenOutAmount = amount0;
     }
     if (token1 != address(desiredToken)) {
       IERC20(token1).safeTransfer(address(swapRouter), amount1);
@@ -156,12 +130,44 @@ contract GammaZapper is ZapperBase {
         address(this),
         ISwapRouter.DexType.UNISWAP_V3
       );
+    } else {
+      tokenOutAmount += amount1;
     }
     address[] memory tokens = new address[](3);
     tokens[0] = address(token0);
     tokens[1] = address(token1);
     tokens[2] = address(desiredToken);
     returnedAssets = _returnAssets(tokens);
+  }
+
+  function _processSingleTokenSwap(
+    IERC20 tokenIn,
+    address token0,
+    address token1,
+    uint256 amount0,
+    uint256 amount1
+  ) internal {
+    address tokenOut = token0;
+    uint256 amountToSwap = amount0;
+
+    if (address(tokenIn) == token0) {
+      tokenOut = token1;
+      amountToSwap = amount1;
+    }
+    tokenIn.safeTransfer(address(swapRouter), amountToSwap);
+    swapRouter.swap(address(tokenIn), tokenOut, amountToSwap, 0, address(this), ISwapRouter.DexType.UNISWAP_V3);
+  }
+
+  function _getTokenBalances(address token0, address token1) internal view returns (uint256, uint256) {
+    return (IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)));
+  }
+
+  function getGammaVaultDepoistAmount(
+    address gammaVault,
+    address token,
+    uint256 _depositAmount
+  ) public view returns (uint256 minAmount, uint256 maxAmount) {
+    (minAmount, maxAmount) = IUniProxy(gammaUniProxy).getDepositAmount(gammaVault, token, _depositAmount);
   }
 
   /**
