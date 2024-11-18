@@ -14,7 +14,7 @@ abstract contract ZapperBase is IZapper {
   using SafeERC20 for IERC20;
   using SafeERC20 for IVault;
 
-  address public governance;
+  address public dev;
   ISwapRouter public swapRouter;
   IWETH public immutable wrappedNative;
   IERC20 public immutable usdcToken;
@@ -22,7 +22,7 @@ abstract contract ZapperBase is IZapper {
   mapping(address => bool) public whitelistedVaults;
 
   constructor(
-    address _governance,
+    address _dev,
     address _wrappedNative,
     address _usdcToken,
     address _swapRouter,
@@ -30,13 +30,10 @@ abstract contract ZapperBase is IZapper {
   ) {
     // Safety checks to ensure wrappedNative token address
     require(
-      _wrappedNative != address(0) ||
-        _usdcToken != address(0) ||
-        _swapRouter != address(0) ||
-        _governance != address(0),
+      _wrappedNative != address(0) || _usdcToken != address(0) || _swapRouter != address(0) || _dev != address(0),
       "Invalid addresses"
     );
-    governance = _governance;
+    dev = _dev;
 
     wrappedNative = IWETH(_wrappedNative);
 
@@ -51,8 +48,8 @@ abstract contract ZapperBase is IZapper {
     }
   }
 
-  modifier onlyGovernance() {
-    require(msg.sender == governance, "Caller is not the governance");
+  modifier onlyDev() {
+    require(msg.sender == dev, "!dev");
     _;
   }
 
@@ -66,11 +63,11 @@ abstract contract ZapperBase is IZapper {
     emit WhitelistVault(_vault, _whitelisted);
   }
 
-  function setWhitelistVault(address _vault, bool _whitelisted) external onlyGovernance {
+  function setWhitelistVault(address _vault, bool _whitelisted) external onlyDev {
     _setWhitelistVault(_vault, _whitelisted);
   }
 
-  function setSwapRouter(address _swapRouter) external onlyGovernance {
+  function setSwapRouter(address _swapRouter) external onlyDev {
     emit SetSwapRouter(_swapRouter, address(swapRouter));
     swapRouter = ISwapRouter(_swapRouter);
   }

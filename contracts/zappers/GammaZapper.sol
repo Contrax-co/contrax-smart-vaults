@@ -15,13 +15,13 @@ contract GammaZapper is ZapperBase {
   uint256[4] minInAmounts = [uint256(0), uint256(0), uint256(0), uint256(0)];
 
   constructor(
-    address _governance,
+    address _dev,
     address _wrappedNative,
     address _usdcToken,
     address _swapRouter,
     address[] memory _vaultsToWhitelist,
     address _gammaUniProxy
-  ) ZapperBase(_governance, _wrappedNative, _usdcToken, _swapRouter, _vaultsToWhitelist) {
+  ) ZapperBase(_dev, _wrappedNative, _usdcToken, _swapRouter, _vaultsToWhitelist) {
     gammaUniProxy = IUniProxy(_gammaUniProxy);
   }
 

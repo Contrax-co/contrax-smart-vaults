@@ -19,9 +19,9 @@ export const doZapperTests = (deploy: DeployFixture) => {
       });
     });
 
-    describe("Governance Functions", function () {
+    describe("Dev Functions", function () {
       // Test governance's ability to add new vaults to the whitelist
-      it("should allow governance to whitelist vault", async function () {
+      it("should allow dev to whitelist vault", async function () {
         const { zapper, governance, vaultAsset, timelock, controller } = await loadFixture(deploy);
 
         const newVault = await hre.viem.deployContract("Vault", [
@@ -60,7 +60,7 @@ export const doZapperTests = (deploy: DeployFixture) => {
       });
 
       // Verify access control - only governance can whitelist vaults
-      it("should prevent non-governance from whitelisting vault", async function () {
+      it("should prevent non-dev from whitelisting vault", async function () {
         const { zapper, vaultAsset, governance, timelock, controller, user } = await loadFixture(deploy);
 
         const newVault = await hre.viem.deployContract("Vault", [
@@ -74,7 +74,7 @@ export const doZapperTests = (deploy: DeployFixture) => {
           zapper.write.setWhitelistVault([newVault.address, true], {
             account: user.account,
           })
-        ).to.be.rejectedWith("Caller is not the governance");
+        ).to.be.rejectedWith("!dev");
       });
     });
 
