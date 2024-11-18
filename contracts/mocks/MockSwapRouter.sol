@@ -82,4 +82,10 @@ contract MockSwapRouter is ISwapRouter {
   function getQuoteV3WithPath(address[] memory, uint256 amountIn, DexType) external pure returns (uint256) {
     return amountIn;
   }
+
+  function v2Router(uint8 dex) external view override returns (address) {}
+
+  function v3Router(uint8 dex) external view override returns (address) {}
+
+  function v3Factory(uint8 dex) external view override returns (address) {}
 }

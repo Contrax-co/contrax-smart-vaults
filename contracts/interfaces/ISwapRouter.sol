@@ -12,6 +12,12 @@ interface ISwapRouter {
 
   function wrappedNative() external view returns (address);
 
+  function v2Router(uint8 dex) external view returns (address);
+
+  function v3Router(uint8 dex) external view returns (address);
+
+  function v3Factory(uint8 dex) external view returns (address);
+
   function swap(
     address tokenIn,
     address tokenOut,

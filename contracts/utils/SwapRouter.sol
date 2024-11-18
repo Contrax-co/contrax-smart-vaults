@@ -29,14 +29,14 @@ contract SwapRouter is ISwapRouter {
   event SetV3Factory(uint8 indexed dex, address factory);
 
   constructor(
-    address _weth,
+    address _wrappedNative,
     uint8[] memory v2DexIndex,
     address[] memory v2Routers,
     uint8[] memory v3DexIndex,
     address[] memory v3Routers,
     address[] memory v3Factories
   ) {
-    wrappedNative = _weth;
+    wrappedNative = _wrappedNative;
     require(v2DexIndex.length == v2Routers.length, "invalid v2 router length");
     require(
       v3DexIndex.length == v3Routers.length && v3DexIndex.length == v3Factories.length,
