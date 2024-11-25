@@ -28,7 +28,7 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
-        run: npm install
+        run: yarn install
 
       - name: Set FORK_URL for current network
         env:
