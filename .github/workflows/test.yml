@@ -33,10 +33,10 @@ jobs:
       - name: Set FORK_URL for current network
         env:
           NETWORK: ${{ matrix.network }}
-          POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
+          POLYGON_URL: ${{ secrets.POLYGON_URL }}
         run: |
           if [ "${{ matrix.network }}" = "polygon" ]; then
-            echo "FORK_URL=${{ secrets.POLYGON_RPC_URL }}" >> $GITHUB_ENV
+            echo "FORK_URL=${{ secrets.POLYGON_URL }}" >> $GITHUB_ENV
           else
             echo "FORK_URL=" >> $GITHUB_ENV
           fi
