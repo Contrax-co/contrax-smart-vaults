@@ -20,9 +20,11 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       chainId: 137,
-      forking: {
-        url: process.env.POLYGON_URL as string,
-      },
+      forking: process.env.FORK_URL
+        ? {
+            url: process.env.FORK_URL,
+          }
+        : undefined,
     },
     polygon: {
       url: process.env.POLYGON_URL,

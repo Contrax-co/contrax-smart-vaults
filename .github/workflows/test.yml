@@ -1,0 +1,49 @@
+name: Run Network-Specific Hardhat Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        network: [hardhat, polygon]
+        include:
+          - network: hardhat
+            test_file: test/mock.test.ts
+          - network: polygon
+            test_file: test/gamma.test.ts
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Set FORK_URL for current network
+        env:
+          NETWORK: ${{ matrix.network }}
+          POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
+        run: |
+          if [ "${{ matrix.network }}" = "polygon" ]; then
+            echo "FORK_URL=${{ secrets.POLYGON_RPC_URL }}" >> $GITHUB_ENV
+          else
+            echo "FORK_URL=" >> $GITHUB_ENV
+          fi
+
+      - name: Run tests
+        env:
+          FORK_URL: ${{ env.FORK_URL }}
+        run: |
+          echo "Running tests for ${{ matrix.network }}"
+          npx hardhat test ${{ matrix.test_file }}
