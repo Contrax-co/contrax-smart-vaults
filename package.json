@@ -1,6 +1,5 @@
 {
   "name": "contrax-smart-vaults",
-  "packageManager": "yarn@4.0.2",
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "0.15.7",
     "@nomicfoundation/hardhat-ignition-viem": "0.15.6",
