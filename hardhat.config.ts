@@ -27,9 +27,9 @@ const config: HardhatUserConfig = {
         : undefined,
     },
     polygon: {
-      url: process.env.POLYGON_URL,
+      url: process.env.POLYGON_URL || "",
       chainId: 137,
-      accounts: [process.env.PRIVATE_KEY as string],
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
   },
 };
